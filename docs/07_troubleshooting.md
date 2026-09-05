@@ -447,5 +447,7 @@ sudo tcpdump -i ens19 -c 10
 | Management Bridge `vmbr0` | Recurrent SSH drops, Tailscale DERP flapping, and stalled transfers. | **Root Cause**: Duplicate IP collision with physical switch equipment (`BC:24:11:80:A3:E4` on `.50`, `BC:24:11:9F:C1:FF` on `.100`). **Resolution**: Migrate to conflict-free static IPs (`192.168.30.55`, `192.168.30.105`) verified via `arping -c 2 -D -I eth0 <IP>`. |
 | Tailscale / WireGuard | Large transfers stall (e.g. `ollama pull` stalls at 17-31%). | **Root Cause**: Path MTU blackholing over WireGuard encapsulation (1500 bytes drops). **Resolution**: Pin interface MTU to `1280` and enforce TCP MSS clamping to `1220` via `network-mss-clamp.service`. |
 | Stateful NAT Gateway | Idle SSH and telemetry sessions disconnect after short pauses. | **Root Cause**: Aggressive NAT firewall table state expiry. **Resolution**: Set `net.ipv4.tcp_keepalive_time=15` in `/etc/sysctl.d/99-network-tuning.conf` and `ClientAliveInterval 15` in SSH daemon. |
+| `deploy/onnx/onnx_edge_daemon.py` | Flower clients observe empty flows (`/mnt/ramdisk/flows/`) during training. | **Root Cause**: `fl-cl-edge-inference.service` running in the background actively deletes processed flow CSVs before Flower clients ingest them. **Resolution**: Disable daemon via `systemctl disable fl-cl-edge-inference.service` and ensure `src/orchestrate.py` verifies the service is stopped before federated training. |
+
 
 
