@@ -84,11 +84,16 @@ def pre_register_host_key(host: str):
         pass
 
 
-def run_ssh(host: str, cmd: str, timeout: int = 10):
+def run_ssh(host: str, cmd: str, timeout: int = 20):
     pre_register_host_key(host)
     start = time.time()
+    ssh_cmd = ["ssh", "-o", "ConnectTimeout=8"]
+    key_path = os.getenv("SSH_KEY_PATH")
+    if key_path and os.path.exists(key_path):
+        ssh_cmd.extend(["-i", key_path])
+    ssh_cmd.extend([f"root@{host}", cmd])
     res = subprocess.run(
-        ["ssh", "-o", "ConnectTimeout=5", f"root@{host}", cmd],
+        ssh_cmd,
         capture_output=True,
         text=True,
         timeout=timeout,
