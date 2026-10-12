@@ -224,20 +224,33 @@ info.append(
 )
 
 # -------------------------------------------------------------
-# 6. Verify Research Scope Specification (scope.md)
+# 6. Verify Research Scope Specification (SCOPE.md / scope.md)
 # -------------------------------------------------------------
-print("\n[6] Auditing Research Scope Specification (scope.md)...")
-scope_file = repo_root / "scope.md"
-if scope_file.exists():
+print("\n[6] Auditing Research Scope Specification (SCOPE.md)...")
+scope_file = next(
+    (
+        f
+        for f in [
+            repo_root / "SCOPE.md",
+            repo_root / "scope.md",
+            repo_root / ".agents" / "rules" / "scope.md",
+        ]
+        if f.exists()
+    ),
+    None,
+)
+if scope_file and scope_file.exists():
     scope_text = scope_file.read_text(encoding="utf-8")
     if "Bounded Research Claims" in scope_text and "5-Class Threat Model" in scope_text:
         info.append(
-            "scope.md: Verified authoritative research scope, anti-scope-creep bounds, and 4 claims."
+            f"{scope_file.name}: Verified authoritative research scope, anti-scope-creep bounds, and 4 claims."
         )
     else:
-        warnings.append("scope.md: Missing standard claim headings.")
+        warnings.append(f"{scope_file.name}: Missing standard claim headings.")
 else:
-    errors.append("scope.md missing from repository root! Must define research scope.")
+    errors.append(
+        "SCOPE.md / scope.md missing from repository root! Must define research scope."
+    )
 
 # -------------------------------------------------------------
 # SUMMARY REPORT
