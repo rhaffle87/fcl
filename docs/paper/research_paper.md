@@ -1563,11 +1563,11 @@ While the current model is highly effective for a robust proof of concept, SOTA 
 
 ### 10.5 Threats to Validity & Methodological Boundaries
 
-To ensure rigorous academic transparency, we explicitly document four methodological boundaries and operational threats to validity in the current FL-CL implementation:
+To ensure rigorous academic transparency, we explicitly document four methodological boundaries and operational threats to validity in the current FCL implementation:
 
 #### 10.5.1 Internal Validity: Physical Testbed Topology ($K=2$) vs. Simulation ($N=5$)
 * **Observation**: In distributed Byzantine fault tolerance, statistical coordinate-wise trimming ($\beta$-TrimmedMean) mathematically requires $K \ge 2f + 1$ participating nodes to discard $\lfloor \beta K \rfloor \ge 1$ outliers. On our physical 3-node Proxmox testbed hosting $K=2$ defender clients (`defender-a` and `defender-b`), when 1 node is compromised ($f=1$), $\lfloor 0.10 \times 2 \rfloor = 0$, operating at the theoretical Byzantine limit ($f/K = 50\%$).
-* **Mitigation**: The FL-CL server coordinator implements an automated fallback to coordinate-wise **`FedMedian`** when $\lfloor \beta K \rfloor = 0$, successfully isolating parameter deviations on physical hardware (99.53% accuracy in Track E, v35). Strict multi-node $\beta$-trimming is validated empirically in the standalone 5-client simulation suite (`tools/benchmark_byzantine.py`).
+* **Mitigation**: The FCL server coordinator implements an automated fallback to coordinate-wise **`FedMedian`** when $\lfloor \beta K \rfloor = 0$, successfully isolating parameter deviations on physical hardware (99.53% accuracy in Track E, v35). Strict multi-node $\beta$-trimming is validated empirically in the standalone 5-client simulation suite (`tools/benchmark_byzantine.py`).
 
 #### 10.5.2 Construct Validity: Batch-Level Gradient Privatization vs. Per-Sample Rényi DP
 * **Observation**: In `src/defender/client.py`, Differential Privacy is applied via batch-averaged gradient clipping (`torch.nn.utils.clip_grad_norm_`) followed by Gaussian noise injection $\mathcal{N}(0, \sigma^2 C^2 \mathbf{I})$.
@@ -1601,7 +1601,7 @@ To ensure rigorous academic transparency, we explicitly document four methodolog
 | **GFCL** (Talpur & Gurusamy, 2022) | Connected Vehicles (IoV) | EWC Baseline | Heuristic Check | Simulation | [BWT Degradation Focus] | Not Reported$^*$ |
 | **FedSI** (Zhang et al., 2023) | General Non-IID Proxies | Synaptic Intelligence | None (FedAvg) | Simulation | [Compression Ratio Focus] | Not Reported$^*$ |
 | **EWC-DR** (Liu et al., 2026) | Vision-Lang. (Centralized) | EWC + Replay Adj. | None (Centralized) | Standalone | [Fisher Vanishing Analysis] | Not Reported$^*$ |
-| **FL-CL (Ours)** | **TLS 1.3 Encrypted Traffic** | **GEM ($P=512, s=0.2$)** | **TrimMean / Median** | **Physical PVE** | **99.53% Acc., 100% Recall** | **7.10 $\mu$s (ONNX)** |
+| **FCL (Ours)** | **TLS 1.3 Encrypted Traffic** | **GEM ($P=512, s=0.2$)** | **TrimMean / Median** | **Physical PVE** | **99.53% Acc., 100% Recall** | **7.10 $\mu$s (ONNX)** |
 
 $^*$*Values marked "Not Reported" are absent from the cited source publications. Qualitative descriptors in brackets denote the specific empirical focus evaluated in each source paper.*
 

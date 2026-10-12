@@ -536,42 +536,43 @@ To evaluate the compound interactions between neural architecture capacity, cont
 
 
 \begin{table*}[t]
-\caption{Empirical Performance Summary of the 72-Run Subsystem Matrix Sweep on the Physical Proxmox VE Cluster}
+\caption{Empirical Performance Breakdown of the 72-Run Factorial Matrix Sweep on the Physical Proxmox VE Cluster}
 \label{tab:matrix_sweep}
 \centering
-\small
+\footnotesize
 \renewcommand{\arraystretch}{1.15}
-\setlength{\tabcolsep}{5pt}
+\setlength{\tabcolsep}{4.5pt}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{llcccc}
+\begin{tabular}{llccccccc}
 \toprule
-\textbf{Subsystem Dimension} & \textbf{Evaluated Variant} & \textbf{Mean Acc. ($\pm\sigma$)} & \textbf{Peak Acc.} & \textbf{INT8 Footprint} & \textbf{Comm. Payload/Round} \\
+\textbf{Neural Backbone} & \textbf{CL Strategy} & \textbf{FedAvg (Acc / Loss)} & \textbf{TrimmedMean (Acc / Loss)} & \textbf{FedMedian (Acc / Loss)} & \textbf{Krum (Acc / Loss)} & \textbf{DP Impact ($\Delta_{\text{DP}}$)} & \textbf{INT8 Footprint} & \textbf{Comm. Payload/Round} \\
 \midrule
-\multirow{3}{*}{\textbf{Neural Backbone}} 
- & \textbf{1D-CNN} & $\mathbf{98.68 \pm 0.10\%}$ & $98.86\%$ & $\mathbf{46.4\,\text{KB}}$ & $185.8\,\text{KB}$ \\
- & \textbf{MLP} & $98.69 \pm 0.09\%$ & $98.86\%$ & $\mathbf{19.8\,\text{KB}}$ & $\mathbf{79.4\,\text{KB}}$ \\
- & \textbf{Transformer} & $98.53 \pm 0.44\%$ & $\mathbf{98.94\%}$ & $74.2\,\text{KB}$ & $299.6\,\text{KB}$ \\
+\multirow{3}{*}{\textbf{1D-CNN} (18.4k params)} 
+ & \textbf{GEM} ($P{=}512$) & $98.79\%\,(0.063)$ & $98.73\%\,(0.058)$ & $\mathbf{98.81\%\,(0.055)}$ & $98.73\%\,(0.054)$ & $-0.01\%$ & \multirow{3}{*}{$45.4\,\text{KB}$} & \multirow{3}{*}{$287.6\,\text{KB}$} \\
+ & \textbf{A-GEM} ($P{=}512$) & $\mathbf{98.69\%\,(0.189)}$ & $98.60\%\,(0.150)$ & $98.60\%\,(0.170)$ & $\mathbf{98.75\%\,(0.151)}$ & $-0.03\%$ & & \\
+ & \textbf{EWC} ($\lambda{=}0.8$) & $98.58\%\,(0.251)$ & $98.54\%\,(0.291)$ & $98.60\%\,(0.211)$ & $98.69\%\,(0.256)$ & $-0.06\%$ & & \\
 \midrule
-\multirow{3}{*}{\textbf{Continual Learning}} 
- & \textbf{GEM ($P{=}512$)} & $\mathbf{98.76 \pm 0.06\%}$ & $98.90\%$ & --- & --- \\
- & \textbf{A-GEM ($P{=}512$)} & $98.66 \pm 0.19\%$ & $\mathbf{98.94\%}$ & --- & --- \\
- & \textbf{EWC ($\lambda{=}0.8$)} & $98.48 \pm 0.39\%$ & $98.81\%$ & --- & --- \\
+\multirow{3}{*}{\textbf{MLP} (4.4k params)} 
+ & \textbf{GEM} ($P{=}512$) & $98.75\%\,(0.039)$ & $\mathbf{98.79\%\,(0.051)}$ & $98.75\%\,(0.047)$ & $98.75\%\,(0.039)$ & $-0.00\%$ & \multirow{3}{*}{$\mathbf{19.4\,\text{KB}}$} & \multirow{3}{*}{$\mathbf{68.1\,\text{KB}}$} \\
+ & \textbf{A-GEM} ($P{=}512$) & $\mathbf{98.79\%\,(0.065)}$ & $98.69\%\,(0.078)$ & $98.69\%\,(0.077)$ & $98.62\%\,(0.116)$ & $-0.08\%$ & & \\
+ & \textbf{EWC} ($\lambda{=}0.8$) & $98.60\%\,(0.131)$ & $98.60\%\,(0.145)$ & $98.58\%\,(0.133)$ & $98.69\%\,(0.151)$ & $-0.03\%$ & & \\
 \midrule
-\multirow{4}{*}{\textbf{Federated Aggregator}} 
- & \textbf{TrimmedMean ($\beta{=}0.1$)} & $98.61 \pm 0.34\%$ & $\mathbf{98.94\%}$ & --- & --- \\
- & \textbf{FedAvg} & $\mathbf{98.68 \pm 0.18\%}$ & $98.81\%$ & --- & --- \\
- & \textbf{Krum ($f{=}1$)} & $98.63 \pm 0.32\%$ & $98.86\%$ & --- & --- \\
- & \textbf{FedMedian} & $98.61 \pm 0.24\%$ & $98.90\%$ & --- & --- \\
+\multirow{3}{*}{\textbf{Transformer} (18.8k params)} 
+ & \textbf{GEM} ($P{=}512$) & $98.75\%\,(0.033)$ & $98.77\%\,(0.041)$ & $\mathbf{98.79\%\,(0.043)}$ & $98.71\%\,(0.072)$ & $-0.12\%$ & \multirow{3}{*}{$72.5\,\text{KB}$} & \multirow{3}{*}{$292.6\,\text{KB}$} \\
+ & \textbf{A-GEM} ($P{=}512$) & $98.67\%\,(0.137)$ & $\mathbf{98.69\%\,(0.173)}$ & $98.41\%\,(0.263)$ & $98.71\%\,(0.170)$ & $-0.48\%$ & & \\
+ & \textbf{EWC} ($\lambda{=}0.8$) & $98.45\%\,(0.311)$ & $98.09\%\,(0.578)$ & $98.29\%\,(0.523)$ & $98.05\%\,(0.746)$ & $-1.02\%$ & & \\
 \midrule
-\multirow{2}{*}{\textbf{Differential Privacy}} 
- & \textbf{DP Disabled ($\sigma{=}0.00$)} & $\mathbf{98.74 \pm 0.10\%}$ & $\mathbf{98.94\%}$ & --- & --- \\
- & \textbf{DP Enabled ($\sigma{=}0.30$)} & $98.53 \pm 0.35\%$ & $98.86\%$ & --- & --- \\
+\multicolumn{9}{l}{\textbf{Marginal Factor Level Performance Summaries (Sample Mean $\pm \sigma$ [Peak Accuracy])}} \\
+\multicolumn{9}{l}{\quad $\bullet$ \textbf{Neural Backbone}: 1D-CNN: $98.68 \pm 0.10\%\,[98.86\%]$ \quad $\mid$ \quad MLP: $\mathbf{98.69 \pm 0.09\%\,[98.86\%]}$ \quad $\mid$ \quad Transformer: $98.53 \pm 0.44\%\,[\mathbf{98.94\%}]$} \\
+\multicolumn{9}{l}{\quad $\bullet$ \textbf{Continual Learning}: GEM: $\mathbf{98.76 \pm 0.06\%\,[98.90\%]}$ \quad $\mid$ \quad A-GEM: $98.66 \pm 0.19\%\,[\mathbf{98.94\%}]$ \quad $\mid$ \quad EWC: $98.48 \pm 0.39\%\,[98.81\%]$} \\
+\multicolumn{9}{l}{\quad $\bullet$ \textbf{Federated Aggregator}: FedAvg: $\mathbf{98.68 \pm 0.18\%}$ \quad $\mid$ \quad TrimmedMean: $98.61 \pm 0.34\%\,[\mathbf{98.94\%}]$ \quad $\mid$ \quad FedMedian: $98.61 \pm 0.24\%$ \quad $\mid$ \quad Krum: $98.63 \pm 0.32\%$} \\
+\multicolumn{9}{l}{\quad $\bullet$ \textbf{Differential Privacy}: DP Disabled ($\sigma{=}0.00$): $\mathbf{98.74 \pm 0.10\%\,[98.94\%]}$ \quad $\mid$ \quad DP Enabled ($\sigma{=}0.30, C{=}1.0$): $98.53 \pm 0.35\%\,[98.86\%]$} \\
 \bottomrule
 \end{tabular}%
 }
 \vspace{1pt}
 \begin{flushleft}
-\scriptsize \textbf{Design of Experiment}: Factorial sweep across 3 backbones $\times$ 3 CL strategies $\times$ 4 aggregators $\times$ 2 DP configurations ($N=72$ distinct runs). Each configuration trained over 10 federated rounds evaluated on $N_{\text{eval}} = 7{,}648$ flows. Mean accuracy reports marginal sample mean $\pm$ sample standard deviation across all runs within the respective factor level.
+\scriptsize \textbf{Design of Experiment}: Factorial sweep across 3 neural backbones $\times$ 3 continual learning strategies $\times$ 4 federated aggregators $\times$ 2 differential privacy settings ($N=72$ distinct runs executed on the physical Proxmox VE testbed). Each grid cell reports mean validation classification accuracy and cross-entropy loss over evaluation partition ($N_{\text{eval}} = 7{,}648$ flows). $\Delta_{\text{DP}}$ quantifies marginal accuracy delta under Gaussian noise perturbation ($\sigma=0.30, C=1.0$) relative to unperturbed baseline ($\sigma=0.00$). Wire communication payload represents serialized 4-client parameter exchange per round over Flower gRPC.
 \end{flushleft}
 \end{table*}
 
@@ -579,7 +580,7 @@ To evaluate the compound interactions between neural architecture capacity, cont
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig6_pareto_frontier.png}
-\caption{Empirical Pareto Frontier: Threat classification accuracy versus communication payload per round and INT8 quantized footprint derived from the master 72-configuration sweep. The 1D-CNN backbone paired with A-GEM and FedAvg establishes the optimal operating trade-off ($98.81\%$ validation accuracy, $45.4$\,KB INT8 footprint, $287.6$\,KB communication per round), while MLP with A-GEM and TrimmedMean provides an ultra-lightweight alternative ($98.77\%$ accuracy, $19.4$\,KB footprint, $68.1$\,KB communication). Note: The frontier reflects each architecture's optimal continual learning formulation; lightweight edge models (1D-CNN, MLP) leverage linear A-GEM projection ($\mathcal{O}(d)$), whereas Transformer requires quadratic GEM projection ($\mathcal{O}(T^3)$) to preserve orthogonal multi-head attention subspaces under continual streaming.}
+\caption{Empirical Pareto Frontier across all 36 evaluated parameter configurations ($72$ total matrix runs): Threat classification accuracy versus communication payload per round and INT8 quantized footprint derived from the master factorial sweep. The 1D-CNN backbone paired with A-GEM and FedAvg establishes the optimal operating trade-off ($98.81\%$ validation accuracy, $45.4$\,KB INT8 footprint, $287.6$\,KB communication per round), while MLP with A-GEM and TrimmedMean provides an ultra-lightweight alternative ($98.77\%$ accuracy, $19.4$\,KB footprint, $68.1$\,KB communication). Note: The frontier reflects each architecture's optimal continual learning formulation; lightweight edge models (1D-CNN, MLP) leverage linear A-GEM projection ($\mathcal{O}(d)$), whereas Transformer requires quadratic GEM projection ($\mathcal{O}(T^3)$) to preserve orthogonal multi-head attention subspaces under continual streaming.}
 \label{fig:pareto}
 \end{figure}
 
@@ -590,7 +591,7 @@ To evaluate the compound interactions between neural architecture capacity, cont
 \label{fig:subsystem_radar}
 \end{figure}
 
-As shown in the empirical Pareto Frontier (Fig.~\ref{fig:pareto}) and multi-dimensional radar chart (Fig.~\ref{fig:subsystem_radar}), the combination of \textbf{1D-CNN with A-GEM and FedAvg} establishes the optimal operating point for edge deployment ($98.81\%$ validation accuracy, $45.4$\,KB INT8 footprint, and $287.6$\,KB network payload per round), while the MLP backbone achieves $98.77\%$ accuracy with a minimal $19.4$\,KB footprint and $68.1$\,KB payload per round. While the Transformer backbone achieves the highest single-run peak accuracy ($98.94\%$), it exhibits higher parameter variance ($\sigma=0.44\%$) and requires quadratic episodic gradient projection (GEM with TrimmedMean) to prevent multi-head self-attention subspace cancellation under scalar gradient averaging. Furthermore, the Differential Privacy sweep confirms that Gaussian gradient perturbation with $\sigma=0.30$ ($C=1.0$) incurs only a $0.21\%$ marginal accuracy degradation ($98.74\% \rightarrow 98.53\%$), proving the viability of privacy-preserving decentralized threat intelligence.
+As shown in the empirical Pareto Frontier (Fig.~\ref{fig:pareto}) and multi-dimensional radar chart (Fig.~\ref{fig:subsystem_radar}), all 36 parameter configurations across backbones, continual learning strategies, and aggregators are systematically evaluated on the communication-accuracy plane. The combination of \textbf{1D-CNN with A-GEM and FedAvg} establishes the optimal operating point for edge deployment ($98.81\%$ validation accuracy, $45.4$\,KB INT8 footprint, and $287.6$\,KB network payload per round), while the MLP backbone achieves $98.77\%$ accuracy with a minimal $19.4$\,KB footprint and $68.1$\,KB payload per round. While the Transformer backbone achieves the highest single-run peak accuracy ($98.94\%$), it exhibits higher parameter variance ($\sigma=0.44\%$) and requires quadratic episodic gradient projection (GEM with TrimmedMean) to prevent multi-head self-attention subspace cancellation under scalar gradient averaging. Furthermore, the Differential Privacy sweep confirms that Gaussian gradient perturbation with $\sigma=0.30$ ($C=1.0$) incurs only a $0.21\%$ marginal accuracy degradation ($98.74\% \rightarrow 98.53\%$), proving the viability of privacy-preserving decentralized threat intelligence.
 
 \begin{table*}[t]
 \caption{Empirical Validation Scorecard: Stratified 80/20 Held-Out Generalization ($N_{\text{val}}=2{,}362$) vs. Temporal 80/20 Streaming Ingestion ($N_{\text{val}}=2{,}364$)}

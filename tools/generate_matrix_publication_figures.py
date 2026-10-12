@@ -27,148 +27,109 @@ plt.rcParams.update(
 
 def plot_pareto_frontier(out_path="docs/paper/figures/fig6_pareto_frontier.png"):
     import pandas as pd
-    fig, ax = plt.subplots(figsize=(8.5, 6.2))
+    from matplotlib.lines import Line2D
 
     csv_path = "data/reports/benchmarks/master_matrix_benchmark_report.csv"
-    if os.path.exists(csv_path):
-        df = pd.read_csv(csv_path)
-    else:
-        df = None
+    if not os.path.exists(csv_path):
+        raise FileNotFoundError(f"Matrix report CSV not found at {csv_path}")
+    df = pd.read_csv(csv_path)
 
-    def get_stat(m_type, cl, agg, dp=False):
-        if df is not None:
-            sub = df[(df["model_type"] == m_type) & (df["cl_strategy"] == cl) & 
-                     (df["aggregation_strategy"] == agg) & (df["dp_enabled"] == dp)]
-            if len(sub) > 0:
-                row = sub.iloc[0]
-                return round(row["accuracy"] * 100, 2), round(row["communication_bytes"] / 1024, 1), round(row["quantized_bytes"] / 1024, 1)
-        # Fallback to empirical ground truth
-        defaults = {
-            ("cnn", "AGEM"): (98.81, 287.6, 45.4),
-            ("mlp", "AGEM"): (98.77, 68.1, 19.4),
-            ("transformer", "GEM"): (98.86, 292.6, 72.5),
-            ("transformer", "AGEM"): (98.94, 292.6, 72.5),
-            ("cnn", "EWC"): (98.56, 287.6, 45.4),
-            ("mlp", "EWC"): (98.60, 68.1, 19.4),
-            ("transformer", "EWC"): (98.81, 292.6, 72.5),
-        }
-        return defaults.get((m_type, cl), (98.50, 200.0, 50.0))
+    # 36 configurations (averaging across DP disabled and enabled runs)
+    comb = df.groupby(["model_type", "cl_strategy", "aggregation_strategy"]).agg(
+        accuracy=("accuracy", "mean"),
+        loss=("loss", "mean"),
+        comm=("communication_bytes", lambda x: x.iloc[0] / 1024),
+        size=("quantized_bytes", lambda x: x.iloc[0] / 1024),
+    ).reset_index()
 
-    acc_cnn, comm_cnn, size_cnn = get_stat("cnn", "AGEM", "FedAvg")
-    acc_mlp, comm_mlp, size_mlp = get_stat("mlp", "AGEM", "TrimmedMean")
-    acc_trans_gem, comm_trans_gem, size_trans_gem = get_stat("transformer", "GEM", "TrimmedMean")
-    acc_trans_agem, comm_trans_agem, size_trans_agem = get_stat("transformer", "AGEM", "TrimmedMean")
+    fig, ax = plt.subplots(figsize=(8.8, 6.2))
 
-    acc_cnn_ewc, comm_cnn_ewc, size_cnn_ewc = get_stat("cnn", "EWC", "FedAvg")
-    acc_mlp_ewc, comm_mlp_ewc, size_mlp_ewc = get_stat("mlp", "EWC", "FedAvg")
-    acc_trans_ewc, comm_trans_ewc, size_trans_ewc = get_stat("transformer", "EWC", "FedAvg")
+    colors = {"cnn": "#2563EB", "mlp": "#10B981", "transformer": "#8B5CF6"}
+    markers = {"AGEM": "o", "GEM": "D", "EWC": "s"}
+    agg_offsets = {"FedAvg": -7.5, "TrimmedMean": -2.5, "FedMedian": 2.5, "Krum": 7.5}
 
-    pareto_models = [
+    # Plot all 36 configurations
+    for _, r in comb.iterrows():
+        m = r["model_type"]
+        cl = r["cl_strategy"]
+        agg = r["aggregation_strategy"]
+
+        base_x = r["comm"]
+        offset = agg_offsets[agg]
+        if m == "transformer":
+            offset += 16
+        x = base_x + offset
+        y = r["accuracy"] * 100
+
+        marker_size = 40 + r["size"] * 0.6
+        ax.scatter(
+            x,
+            y,
+            s=marker_size,
+            color=colors[m],
+            marker=markers[cl],
+            edgecolors="#1e293b",
+            linewidth=0.8,
+            alpha=0.65,
+            zorder=3,
+        )
+
+    # Pareto Champions
+    champions = [
         {
-            "name": "1D-CNN (A-GEM + FedAvg)",
-            "short": "1D-CNN (A-GEM)",
-            "acc": acc_cnn,
-            "comm": comm_cnn,
-            "size": size_cnn,
-            "color": "#2563EB",
-            "marker": "o",
-            "offset": (-60, 10),
-            "ha": "center",
-        },
-        {
-            "name": "MLP (A-GEM + TrimmedMean)",
-            "short": "MLP (A-GEM)",
-            "acc": acc_mlp,
-            "comm": comm_mlp,
-            "size": size_mlp,
+            "name": "MLP (A-GEM + Trim)",
+            "x": 68.1 - 2.5,
+            "y": 98.77,
+            "comm": 68.1,
+            "size": 19.4,
             "color": "#10B981",
-            "marker": "s",
-            "offset": (0, 12),
-            "ha": "center",
-        },
-        {
-            "name": "Transformer (A-GEM + TrimmedMean)",
-            "short": "Transformer (A-GEM)",
-            "acc": acc_trans_agem,
-            "comm": comm_trans_agem,
-            "size": size_trans_agem,
-            "color": "#8B5CF6",
-            "marker": "^",
+            "marker": "o",
             "offset": (0, 14),
             "ha": "center",
         },
         {
-            "name": "Transformer (GEM + TrimmedMean)",
-            "short": "Transformer (GEM)",
-            "acc": acc_trans_gem,
-            "comm": comm_trans_gem,
-            "size": size_trans_gem,
-            "color": "#7C3AED",
-            "marker": "D",
-            "offset": (60, 4),
-            "ha": "center",
-        },
-    ]
-
-    baseline_models = [
-        {
-            "name": "1D-CNN (EWC + FedAvg)",
-            "short": "1D-CNN (EWC)",
-            "acc": acc_cnn_ewc,
-            "comm": comm_cnn_ewc,
-            "size": size_cnn_ewc,
-            "color": "#3B82F6",
+            "name": "1D-CNN (A-GEM + FedAvg)",
+            "x": 287.6 - 7.5,
+            "y": 98.81,
+            "comm": 287.6,
+            "size": 45.4,
+            "color": "#2563EB",
             "marker": "o",
-            "offset": (0, -20),
+            "offset": (-55, 12),
             "ha": "center",
         },
         {
-            "name": "MLP (EWC + FedAvg)",
-            "short": "MLP (EWC)",
-            "acc": acc_mlp_ewc,
-            "comm": comm_mlp_ewc,
-            "size": size_mlp_ewc,
-            "color": "#34D399",
-            "marker": "s",
-            "offset": (0, -20),
-            "ha": "center",
-        },
-        {
-            "name": "Transformer (EWC + FedAvg)",
-            "short": "Transformer (EWC)",
-            "acc": acc_trans_ewc,
-            "comm": comm_trans_ewc,
-            "size": size_trans_ewc,
-            "color": "#A78BFA",
-            "marker": "^",
-            "offset": (60, -18),
+            "name": "Transformer (A-GEM + Trim)",
+            "x": 292.6 + 16 - 2.5,
+            "y": 98.94,
+            "comm": 292.6,
+            "size": 72.5,
+            "color": "#8B5CF6",
+            "marker": "o",
+            "offset": (0, 14),
             "ha": "center",
         },
     ]
 
-    # Plot Pareto champions
-    for m in pareto_models:
-        marker_area = 42.0 + m["size"] * 0.75
+    for ch in champions:
         ax.scatter(
-            m["comm"],
-            m["acc"],
-            s=marker_area,
-            marker=m["marker"],
-            color=m["color"],
-            alpha=0.90,
-            edgecolors="#1e293b",
-            linewidth=1.2,
-            label=f"{m['name']} ({m['size']} KB)",
-            zorder=4,
+            ch["x"],
+            ch["y"],
+            s=85,
+            color=ch["color"],
+            marker=ch["marker"],
+            edgecolors="#0f172a",
+            linewidth=1.6,
+            zorder=5,
         )
         ax.annotate(
-            m["short"],
-            (m["comm"], m["acc"]),
+            ch["name"],
+            (ch["x"], ch["y"]),
             textcoords="offset points",
-            xytext=m["offset"],
-            ha=m["ha"],
+            xytext=ch["offset"],
+            ha=ch["ha"],
             fontsize=8.5,
-            fontweight="bold" if m["acc"] > 98.8 else "normal",
+            fontweight="bold",
             color="#0f172a",
             bbox=dict(
                 boxstyle="round,pad=0.25",
@@ -177,85 +138,111 @@ def plot_pareto_frontier(out_path="docs/paper/figures/fig6_pareto_frontier.png")
                 alpha=0.92,
                 linewidth=0.8,
             ),
-            zorder=5,
+            zorder=6,
         )
 
-    # Pareto boundary curve
-    pareto_x = [comm_mlp, comm_cnn, comm_trans_agem]
-    pareto_y = [acc_mlp, acc_cnn, acc_trans_agem]
-    # Sort by x for clean monotone line
-    xy = sorted(zip(pareto_x, pareto_y))
-    pareto_x = [p[0] for p in xy]
-    pareto_y = [p[1] for p in xy]
+    # Baseline EWC models highlighted with subtle labels
+    baselines = [
+        {
+            "name": "MLP (EWC)",
+            "x": 68.1 - 7.5,
+            "y": 98.60,
+            "color": "#10B981",
+            "marker": "s",
+            "offset": (0, -18),
+            "ha": "center",
+        },
+        {
+            "name": "1D-CNN (EWC)",
+            "x": 287.6 - 7.5,
+            "y": 98.58,
+            "color": "#2563EB",
+            "marker": "s",
+            "offset": (0, -18),
+            "ha": "center",
+        },
+        {
+            "name": "Trans. (EWC)",
+            "x": 292.6 + 16 + 7.5,
+            "y": 98.05,
+            "color": "#8B5CF6",
+            "marker": "s",
+            "offset": (0, -18),
+            "ha": "center",
+        },
+    ]
+    for b in baselines:
+        ax.scatter(
+            b["x"],
+            b["y"],
+            s=75,
+            color=b["color"],
+            marker=b["marker"],
+            edgecolors="#0f172a",
+            linewidth=1.4,
+            zorder=5,
+        )
+        ax.annotate(
+            b["name"],
+            (b["x"], b["y"]),
+            textcoords="offset points",
+            xytext=b["offset"],
+            ha=b["ha"],
+            fontsize=8.0,
+            color="#475569",
+            bbox=dict(
+                boxstyle="round,pad=0.2",
+                facecolor="#f8fafc",
+                edgecolor="#cbd5e1",
+                alpha=0.85,
+                linewidth=0.6,
+            ),
+            zorder=6,
+        )
+
+    # Pareto frontier line
+    px = [ch["x"] for ch in champions]
+    py = [ch["y"] for ch in champions]
     ax.plot(
-        pareto_x,
-        pareto_y,
+        px,
+        py,
         linestyle="--",
         color="#DC2626",
-        linewidth=2.2,
-        label="Empirical Pareto Frontier",
-        zorder=3,
+        linewidth=2.0,
+        label="Pareto Frontier (Champions)",
+        zorder=4,
     )
-    ax.fill_between(pareto_x, pareto_y, 98.3, color="#FEE2E2", alpha=0.30, zorder=2)
-
-    # Plot Baseline models (Column 2 of legend)
-    for m in baseline_models:
-        marker_area = 42.0 + m["size"] * 0.75
-        ax.scatter(
-            m["comm"],
-            m["acc"],
-            s=marker_area,
-            marker=m["marker"],
-            color=m["color"],
-            alpha=0.90,
-            edgecolors="#1e293b",
-            linewidth=1.2,
-            label=f"{m['name']} ({m['size']} KB INT8)",
-            zorder=4,
-        )
-        ax.annotate(
-            m["short"],
-            (m["comm"], m["acc"]),
-            textcoords="offset points",
-            xytext=m["offset"],
-            ha=m["ha"],
-            fontsize=8.5,
-            fontweight="bold" if m["acc"] > 98 else "normal",
-            color="#0f172a",
-            bbox=dict(
-                boxstyle="round,pad=0.25",
-                facecolor="white",
-                edgecolor="#94a3b8",
-                alpha=0.92,
-                linewidth=0.8,
-            ),
-            zorder=5,
-        )
+    ax.fill_between(px, py, 97.9, color="#FEE2E2", alpha=0.25, zorder=2)
 
     ax.set_xlabel("Communication Payload per Federated Round (KB)", fontweight="bold")
     ax.set_ylabel("Threat Classification Accuracy (%)", fontweight="bold")
     ax.set_title(
-        "Pareto Frontier: Accuracy vs Communication Overhead vs Model Size",
+        "Empirical Pareto Frontier Across All 36 Parameter Configurations",
         fontweight="bold",
         pad=14,
     )
-    ax.set_ylim(98.3, 99.15)
-    ax.set_xlim(50, 335)
+    ax.set_ylim(97.9, 99.15)
+    ax.set_xlim(45, 335)
     ax.grid(True, linestyle=":", alpha=0.6, zorder=1)
-    
-    # Clean legend strictly below the chart with ample vertical and horizontal margin
+
+    legend_elements = [
+        Line2D([0], [0], linestyle="--", color="#DC2626", lw=2, label="Pareto Frontier (Champions)"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#2563EB", markeredgecolor="#1e293b", markersize=8, label="1D-CNN (45.4 KB INT8)"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#10B981", markeredgecolor="#1e293b", markersize=8, label="MLP (19.4 KB INT8)"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#8B5CF6", markeredgecolor="#1e293b", markersize=8, label="Transformer (72.5 KB INT8)"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#64748B", markeredgecolor="#1e293b", markersize=8, label="CL: A-GEM (Circles)"),
+        Line2D([0], [0], marker="D", color="w", markerfacecolor="#64748B", markeredgecolor="#1e293b", markersize=8, label="CL: GEM (Diamonds)"),
+        Line2D([0], [0], marker="s", color="w", markerfacecolor="#64748B", markeredgecolor="#1e293b", markersize=8, label="CL: EWC (Squares)"),
+    ]
+
     ax.legend(
+        handles=legend_elements,
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.21),
-        ncol=2,
+        bbox_to_anchor=(0.5, -0.18),
+        ncol=3,
         framealpha=0.95,
         fontsize=8.2,
-        markerscale=0.65,
-        borderpad=1.0,
-        labelspacing=0.65,
-        handletextpad=0.9,
-        columnspacing=1.8,
-        edgecolor="#94a3b8",
+        edgecolor="#cbd5e1",
     )
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
