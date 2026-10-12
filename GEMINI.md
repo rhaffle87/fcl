@@ -7,7 +7,7 @@ Welcome! This document outlines key context, conventions, architecture details, 
 ## 0. Authoritative Research Scope & Anti-Scope-Creep Boundary
 
 > [!IMPORTANT]
-> **Mandatory Scope Gatekeeper**: All implementations, experiments, datasets, and refactorings must strictly conform to [`scope.md`](file:///e:/Projects/fl-cl/scope.md) and [`.agents/rules/scope.md`](file:///e:/Projects/fl-cl/.agents/rules/scope.md).
+> **Mandatory Scope Gatekeeper**: All implementations, experiments, datasets, and refactorings must strictly conform to [`SCOPE.md`](SCOPE.md) and [`.agents/rules/scope.md`](.agents/rules/scope.md).
 >
 > * **The 4 Bounded Claims**:
 >   - **C1: Forgetting Resistance**: Botnet $BWT$ recovery via class-weighted EWC ($\lambda=1.0$) and episodic memory GEM ($P=512$).
@@ -16,7 +16,7 @@ Welcome! This document outlines key context, conventions, architecture details, 
 >   - **C4: Encrypted Traffic Detection**: 32-dimensional NFStream flow metadata without payload decryption or DPI.
 > * **Canonical 5-Class Threat Model**: `0: Normal`, `1: Botnet`, `2: Exfiltration`, `3: BruteForce`, `4: DoS`. Never modify or expand $C$ beyond 5.
 > * **Explicit Non-Goals**: No open-ended generic multi-dataset data platforms, no payload decryption / DPI, no duplicate experiment orchestrators bypassing `src/orchestrate.py`.
-> * **Decision Gate**: If a proposed change does not pass all 5 criteria in the Anti-Scope-Creep Decision Matrix ([`scope.md`](file:///e:/Projects/fl-cl/scope.md#8-anti-scope-creep-decision-matrix-gatekeeper)), reject it immediately.
+> * **Decision Gate**: If a proposed change does not pass all 5 criteria in the Anti-Scope-Creep Decision Matrix ([`SCOPE.md`](SCOPE.md#8-anti-scope-creep-decision-matrix-gatekeeper)), reject it immediately.
 
 ---
 

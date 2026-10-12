@@ -30,21 +30,32 @@ def resolve_link_target(md_file: Path, target_str: str) -> Path:
     if not target_clean:
         return None
 
+    resolved = None
     if target_clean.startswith("file:///"):
         path_part = target_clean[8:]
-        # Extract relative path if inside fl-cl workspace
-        if "fl-cl/" in path_part:
-            rel_sub = path_part.split("fl-cl/", 1)[1]
-            return (repo_root / rel_sub).resolve()
-        elif "fl-cl\\" in path_part:
-            rel_sub = path_part.split("fl-cl\\", 1)[1]
-            return (repo_root / rel_sub).resolve()
-        # Windows drive letter pattern
-        if re.match(r"^[a-zA-Z]:[/\\].*", path_part):
-            return Path(path_part)
-        return (repo_root / path_part.lstrip("/\\")).resolve()
+        # Extract relative path if inside fl-cl or fcl workspace
+        for sep in ["fl-cl/", "fl-cl\\", "fcl/", "fcl\\"]:
+            if sep in path_part:
+                rel_sub = path_part.split(sep, 1)[1]
+                resolved = (repo_root / rel_sub).resolve()
+                break
+        if resolved is None:
+            # Windows drive letter pattern
+            if re.match(r"^[a-zA-Z]:[/\\].*", path_part):
+                resolved = Path(path_part)
+            else:
+                resolved = (repo_root / path_part.lstrip("/\\")).resolve()
+    else:
+        resolved = (md_file.parent / target_clean).resolve()
 
-    return (md_file.parent / target_clean).resolve()
+    # Case-insensitive resolution fallback for Linux CI environments
+    if resolved and not resolved.exists() and resolved.parent.exists():
+        target_name_lower = resolved.name.lower()
+        for candidate in resolved.parent.iterdir():
+            if candidate.name.lower() == target_name_lower:
+                return candidate.resolve()
+
+    return resolved
 
 
 for md_file in md_files:
