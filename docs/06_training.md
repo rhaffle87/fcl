@@ -171,7 +171,7 @@ Use `tools/validate_bwt.py` to evaluate any TorchScript model checkpoint. The to
 python tools/validate_bwt.py \
   --checkpoint checkpoints/model_latest_scripted.pt \
   --test-dir /mnt/ramdisk/flows \
-  --output data/reports/bwt_report.csv \
+  --output data/reports/benchmarks/bwt_report.csv \
   --peak-f1 "0.95,0.92,0.97,0.94,0.99" \
   --mlflow-run-id "your_active_mlflow_run_id"
 ```

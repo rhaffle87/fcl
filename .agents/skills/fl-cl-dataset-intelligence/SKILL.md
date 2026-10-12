@@ -56,7 +56,7 @@ Benchmark a trained model checkpoint against heterogeneous datasets (CIC-IDS2017
 python tools/benchmark_cross_dataset.py \
     --model-type cnn \
     --checkpoint models/checkpoints/champion.pt \
-    --output data/reports/cross_dataset_benchmark_report.csv
+    --output data/reports/benchmarks/cross_dataset_benchmark_report.csv
 ```
 
 ---

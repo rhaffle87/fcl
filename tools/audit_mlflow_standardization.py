@@ -12,6 +12,8 @@ def audit_mlflow(db_override: str | None = None):
         db_path = db_override
     elif os.path.exists("/root/mlflow.db"):
         db_path = "/root/mlflow.db"
+    elif os.path.exists("data/db/mlflow.db"):
+        db_path = "data/db/mlflow.db"
     elif os.path.exists("mlflow.db"):
         db_path = "mlflow.db"
     else:

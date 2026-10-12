@@ -807,7 +807,7 @@ The hyperparameter search was deliberately constrained, not exhaustive:
 
 3. **GEM Reinforces the Pattern**: Under GEM, the QP constraint $\langle \tilde{g}, g_k \rangle \ge 0$ prevents *any* negative transfer for classes with stored exemplary patterns. With $P = 512$ patterns per class, the constraint is well-conditioned for all 5 classes. The BWT = 0.000 under GEM is a direct mathematical consequence of the algorithm's design, not an empirical coincidence.
 
-4. **Raw Data Available**: The per-round F1 trajectories are stored in `data/reports/benchmarks/bwt_report.csv` and visualized in `data/plots/forgetting_curves.png` (now embedded as Figure 9 in the paper). The Botnet BWT degrades monotonically from 0.000 to −0.26 over 24 rounds while all other classes remain at 0.000 — independently confirming the class-specific forgetting mechanism.
+4. **Raw Data Available**: The per-round F1 trajectories are recorded across active MLflow runs and visualized in `data/plots/forgetting_curves.png` (embedded as Figure 9 in the paper), while summary BWT milestone comparisons across experimental tracks are compiled in `data/reports/benchmarks/bwt_report.csv`. The Botnet BWT degrades monotonically from 0.000 to −0.26 over 24 rounds under EWC while all other classes remain at 0.000 — independently confirming the class-specific forgetting mechanism.
 
 ### 13.6 Attack: "Single Seed — No Statistical Significance"
 

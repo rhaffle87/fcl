@@ -39,7 +39,7 @@
 - Automated systemd service unit (`fl-cl-edge-inference.service`) actively deployed across physical nodes (`10.10.130.11` and `10.10.130.12`).
 
 ### E. Academic IEEE Manuscript & High-Res Visuals
-- Updated and compiled **10-page IEEE Transactions journal manuscript** (`docs/paper/manuscript.pdf`).
+- Updated and compiled **11-page IEEE Transactions journal manuscript** (`docs/paper/manuscript.pdf`).
 - Generated 300-DPI publication figures including the empirical Pareto Frontier and 6-dimensional subsystem radar.
 
 ---

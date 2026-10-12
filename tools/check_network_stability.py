@@ -87,7 +87,7 @@ def pre_register_host_key(host: str):
 def run_ssh(host: str, cmd: str, timeout: int = 20):
     pre_register_host_key(host)
     start = time.time()
-    ssh_cmd = ["ssh", "-o", "ConnectTimeout=8"]
+    ssh_cmd = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
     key_path = os.getenv("SSH_KEY_PATH")
     if key_path and os.path.exists(key_path):
         ssh_cmd.extend(["-i", key_path])
@@ -97,6 +97,7 @@ def run_ssh(host: str, cmd: str, timeout: int = 20):
         capture_output=True,
         text=True,
         timeout=timeout,
+        stdin=subprocess.DEVNULL,
     )
     rtt = round((time.time() - start) * 1000, 1)
     return res.returncode, res.stdout.strip(), res.stderr.strip(), rtt

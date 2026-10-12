@@ -155,7 +155,7 @@ def main():
     for label in range(5):
         count = counts_full[label]
         name = label_names.get(label, "Unknown")
-        bar = "█" * min(count // 10, 50)
+        bar = "#" * min(count // 10, 50)
         print(f"  {label} ({name:>13s}): {count:>5d}  {bar}")
 
     # Show sample flows for each class

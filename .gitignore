@@ -10,11 +10,11 @@ __pycache__/
 htmlcov/
 .ipynb_checkpoints/
 
-# Virtual environments
-.venv/
-venv/
-env/
-*-env/
+/.venv/
+/venv/
+/data/
+/Datasets/
+*.pcap
 
 # IDEs & OS metadata
 .vscode/
@@ -92,3 +92,4 @@ plots/
 
 # Static analysis configuration
 pyrightconfig.json
+docs/paper/preview_pages/

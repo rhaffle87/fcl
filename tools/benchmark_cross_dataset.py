@@ -212,7 +212,9 @@ def main():
     )
     parser.add_argument(
         "--output",
-        default=os.path.join("data", "reports", "cross_dataset_benchmark_report.csv"),
+        default=os.path.join(
+            "data", "reports", "benchmarks", "cross_dataset_benchmark_report.csv"
+        ),
         help="Output path for CSV report",
     )
     parser.add_argument(

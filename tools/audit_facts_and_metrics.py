@@ -21,7 +21,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src" / "defender"))
 from model import CyberDefenseCNN, CyberDefenseNet, CyberDefenseTransformer
 
 DOCS_DIR = PROJECT_ROOT / "docs"
-REPORTS_DIR = PROJECT_ROOT / "data" / "reports"
+REPORTS_DIR = PROJECT_ROOT / "data" / "reports" / "benchmarks"
 CONFIGS_DIR = PROJECT_ROOT / "configs"
 DATASETS_DIR = PROJECT_ROOT / "datasets"
 AGENTS_DIR = PROJECT_ROOT / ".agents"

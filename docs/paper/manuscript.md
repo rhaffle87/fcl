@@ -28,11 +28,11 @@ In this paper, we introduce **FL-CL**, an end-to-end framework integrating **Fed
 
 Modern enterprise network architectures are decentralized across multi-tenant cloud platforms, branch offices, and edge compute clusters. Edge gateways must continuously analyze telemetry to detect multi-stage cyber attacks. However, centralized raw packet collection is prohibited by privacy regulations (GDPR, HIPAA) and bandwidth constraints. 
 
-Simultaneously, over 95% of enterprise web traffic is encrypted with TLS 1.3, rendering payload inspection obsolete. Network defenders must rely on **Encrypted Traffic Analysis (ETA)** derived from flow metadata: packet lengths, inter-arrival times, TCP flags, and TLS handshake characteristics.
+Simultaneously, over 95% of enterprise web traffic is encrypted with TLS 1.3, rendering payload inspection obsolete. Network defenders must rely on **Encrypted Traffic Analysis (ETA)** derived from flow metadata: Sequence of Packet Lengths and Times (SPLT), Packet Inter-Arrival Time (PIAT) dynamics, TCP flags, and TLS handshake characteristics.
 
 ### The Continual Federated Learning Dilemma
 
-When edge gateways train local models on sequentially arriving threat streams (Normal, followed by SSH Brute Force, Slowloris DoS, DNS Exfiltration, and C2 Botnet), standard stochastic gradient descent overwrites older threat representations (**catastrophic forgetting**). While regularized continual learning algorithms like Elastic Weight Consolidation (EWC) protect majority classes, they collapse on rare minority classes when sample sizes during brief attack phases are limited.
+When edge gateways train local models on sequentially arriving threat streams (Normal, followed by SSH Brute Force, Slowloris DoS, DNS Exfiltration, and C2 Botnet), standard stochastic gradient descent overwrites older threat representations (**catastrophic forgetting**, quantified via negative Backward Transfer $\text{BWT} < 0$). While regularized continual learning algorithms like Elastic Weight Consolidation (EWC) protect majority classes, they collapse on rare minority classes when sample sizes during brief attack phases are limited.
 
 Furthermore, federated learning introduces vulnerability to **Byzantine poisoning**: an attacker compromising a single edge defender can flip threat labels (e.g., flipping Botnet labels to Normal) to inject detection blindspots into the global model.
 
@@ -57,6 +57,14 @@ flowchart TD
     ML -->|"TorchScript & ONNX Deploy"| DB
 ```
 
+### 1.2 Related Work Taxonomy Matrix
+
+| Adaptation Paradigm | Standard Federated Learning | Differential Privacy | Byzantine-Robust Aggregation |
+| :--- | :--- | :--- | :--- |
+| **Static** | FedAvg (McMahan 2017), TabTrans (Fares 2025) | Bunko et al. (2026) | Yin et al. (TrimmedMean 2018) |
+| **Incremental** | FL-IIDS (Jin 2024), Rehman et al. (2026) | *[Open Gap: Unaddressed]* | *[Open Gap: Unaddressed]* |
+| **Continual** | GFCL (Talpur 2022), FedSI (Zhang 2023) | Chen et al. (2024) | **FL-CL (This Work: GEM + TrimmedMean)** |
+
 ---
 
 ## 2. System Architecture & Testbed Setup
@@ -73,14 +81,23 @@ The experimental testbed is deployed across a physical Proxmox VE hypervisor clu
 | `target-a1` / `b1`| VM 311 / 321 | `10.10.110.15` / `120.15`| 2 vCPU, 4 GB RAM | Target HTTP/SSH services receiving traffic |
 | `traffic-gen` | VM 400 | `10.10.140.10` | 4 vCPU, 8 GB RAM | Multi-threaded Kali offensive traffic generator |
 
-### 2.2 Feature Extraction Engine & In-Memory Pipeline
+### 2.2 Feature Extraction Engine & Dataset Provenance
 
-Flow features are extracted using NFStream with deep dissection depth (`n_dissections=20`). Flows are serialized to a volatile RAMDisk (`/mnt/ramdisk/flows/`) backed by `tmpfs` (2.0 GB). This eliminates disk write contention across virtualized nodes, achieving zero-I/O flow serialization.
+Flow features are extracted using NFStream with snapshot length `snapshot_length=1536`, deep dissection depth (`n_dissections=20`), idle timeout `idle_timeout=10`s, and active timeout `active_timeout=60`s. Flows are serialized in batches of $B=500$ flows (or 5-second interval) to a volatile RAMDisk (`/mnt/ramdisk/flows/`) backed by `tmpfs` (4.0 GB). The edge client extracts 10 physical flow moments, normalizes them, and deterministically zero-pads to the canonical 32-dimensional input tensor, eliminating virtual disk write contention across virtualized nodes.
 
 Each flow vector $\mathbf{x} \in \mathbb{R}^{32}$ is partitioned across three functional telemetry domains:
 - **Handshake Fingerprinting (8 dims)**: JA3/JA4 client hashes and JA3S/JA4S server fingerprints capturing cipher suite ordering and TLS extension parameters.
 - **Transport Dynamics & SPLT (16 dims)**: Sequence of Packet Lengths and Times (SPLT) across directional bursts, packet size variance, and inter-arrival time (IAT) jitter.
 - **Payload Byte Statistics (8 dims)**: Shannon entropy $H(X) = -\sum_{i} P(x_i) \log_2 P(x_i)$ over flow byte slices, directional byte counts, and packet-to-byte ratio symmetry.
+
+Features are normalized using coordinate-wise Z-score scaling against benign calibration statistics ($N_{\text{calib}} = 2{,}000$) with clipping bounded to $[-5.0, 5.0]$. The live capture dataset contains $N = 11{,}823$ aggregate network flows ($5{,}922$ on Defender A, $5{,}901$ on Defender B) across 396 CSV files:
+- **Class 0 (Normal)**: $10{,}942$ flows ($92.55\%$)
+- **Class 1 (Botnet C2)**: $74$ flows ($0.63\%$)
+- **Class 2 (DNS Exfiltration)**: $591$ flows ($5.00\%$)
+- **Class 3 (SSH BruteForce)**: $149$ flows ($1.26\%$)
+- **Class 4 (Slowloris DoS)**: $67$ flows ($0.57\%$)
+
+Stratified 80/20 train/validation partitioning yields $N_{\text{Botnet}} = 37$ live Botnet training instances per defender node ($1 : 148$ class imbalance ratio). Zero missing or infinite values exist in numerical attributes.
 
 ---
 

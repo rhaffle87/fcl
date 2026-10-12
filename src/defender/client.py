@@ -206,7 +206,8 @@ def scale_features(X, available_cols, stats_path=None):
     means = np.array(means, dtype=np.float32)
     stds = np.array(stds, dtype=np.float32)
 
-    return (X - means) / stds
+    scaled = (X - means) / stds
+    return np.clip(scaled, -5.0, 5.0)
 
 
 def assign_label(row, dos_threshold_ms=2000, traffic_gen_ip=None):
@@ -228,7 +229,7 @@ def load_ramdisk_flows(
     """
     Load all CSV flow files from the RAM disk and convert to PyTorch tensors.
     """
-    if flows_dir.startswith("/mnt/ramdisk") and sys.platform.startswith("linux"):
+    if str(flows_dir).startswith("/mnt/ramdisk") and sys.platform.startswith("linux"):
         if os.path.exists("/mnt/ramdisk") and not os.path.ismount("/mnt/ramdisk"):
             _log.warning(
                 "/mnt/ramdisk is not mounted as tmpfs! Potential disk I/O contention."

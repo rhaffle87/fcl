@@ -121,7 +121,13 @@ def main():
     )
     parser.add_argument(
         "--output",
-        default=str(repo_root / "data" / "reports" / "benchmark_evaluation_report.csv"),
+        default=str(
+            repo_root
+            / "data"
+            / "reports"
+            / "benchmarks"
+            / "benchmark_evaluation_report.csv"
+        ),
         help="Output path for signed CSV",
     )
     parser.add_argument(

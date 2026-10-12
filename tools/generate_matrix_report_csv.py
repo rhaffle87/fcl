@@ -30,7 +30,7 @@ JOIN params p_agg ON r.run_uuid = p_agg.run_uuid AND p_agg.key = 'aggregation_st
 LEFT JOIN params p_dp ON r.run_uuid = p_dp.run_uuid AND p_dp.key = 'dp_enabled'
 LEFT JOIN params p_lr ON r.run_uuid = p_lr.run_uuid AND p_lr.key = 'lr'
 LEFT JOIN params p_bs ON r.run_uuid = p_bs.run_uuid AND p_bs.key = 'batch_size'
-WHERE (r.experiment_id = 4 OR (r.experiment_id = 1 AND r.start_time >= 1787895000000))
+WHERE r.status = 'FINISHED'
 '''
 df_runs = pd.read_sql_query(query, conn)
 
@@ -42,10 +42,12 @@ pivoted = latest.pivot(index='run_uuid', columns='key', values='value').reset_in
 df = pd.merge(df_runs, pivoted, on='run_uuid', how='inner')
 df['dp_enabled'] = df['dp_enabled'].fillna('false').astype(str).str.lower()
 
-if 'loss' not in df.columns and 'final_best_loss' in df.columns:
-    df['loss'] = df['final_best_loss']
-if 'accuracy' not in df.columns and 'final_best_accuracy' in df.columns:
-    df['accuracy'] = df['final_best_accuracy']
+if 'final_best_loss' in df.columns:
+    df['loss'] = df['loss'].fillna(df['final_best_loss'])
+if 'best_loss' in df.columns:
+    df['loss'] = df['loss'].fillna(df['best_loss'])
+if 'final_best_accuracy' in df.columns:
+    df['accuracy'] = df['accuracy'].fillna(df['final_best_accuracy'])
 
 size_map = {'cnn': 46447, 'mlp': 19843, 'transformer': 74240}
 df['quantized_bytes'] = df['model_type'].map(size_map)
@@ -59,6 +61,22 @@ cols_order = [
 avail_cols = [c for c in cols_order if c in df.columns]
 print(df[avail_cols].to_csv(index=False))
 """
+
+    out_csv = "data/reports/benchmarks/master_matrix_benchmark_report.csv"
+    os.makedirs(os.path.dirname(out_csv), exist_ok=True)
+
+    if args.local or not os.path.exists("/root/mlflow.db"):
+        local_db = args.db_path or "data/db/mlflow.db"
+        if os.path.exists(local_db):
+            print(f"[*] Extracting directly from local database: {local_db}")
+            local_py = py_code.replace("conn = sqlite3.connect('/root/mlflow.db')", f"conn = sqlite3.connect(r'{local_db}')")
+            res = subprocess.run([sys.executable, "-c", local_py], capture_output=True, text=True, encoding="utf-8")
+            if res.returncode == 0:
+                with open(out_csv, "w", encoding="utf-8") as f:
+                    f.write(res.stdout)
+                df_check = pd.read_csv(out_csv)
+                print(f"[SUCCESS] Exported {len(df_check)} matrix run records to {out_csv}")
+                return
 
     cmd = [
         "ssh",
@@ -77,8 +95,6 @@ print(df[avail_cols].to_csv(index=False))
         print("ERROR:", res.stderr)
         return
 
-    os.makedirs("data/reports/benchmarks", exist_ok=True)
-    out_csv = "data/reports/benchmarks/master_matrix_benchmark_report.csv"
     with open(out_csv, "w", encoding="utf-8") as f:
         f.write(res.stdout)
 
@@ -87,8 +103,11 @@ print(df[avail_cols].to_csv(index=False))
 
 
 if __name__ == "__main__":
+    import sys
     parser = argparse.ArgumentParser(
         description="72-Combination Benchmark Matrix CSV Extractor"
     )
-    _ = parser.parse_args()
+    parser.add_argument("--local", action="store_true", help="Extract from local SQLite database")
+    parser.add_argument("--db-path", default=None, help="Custom path to SQLite database")
+    args = parser.parse_args()
     main()

@@ -122,7 +122,7 @@ def profile_reports():
         return []
 
     report_profiles = []
-    for f in sorted(REPORTS_DIR.glob("*.csv")):
+    for f in sorted(REPORTS_DIR.rglob("*.csv")):
         try:
             with open(f, "r", encoding="utf-8", errors="replace") as fh:
                 header = fh.readline().strip().split(",")
@@ -130,6 +130,7 @@ def profile_reports():
             report_profiles.append(
                 {
                     "report_name": f.name,
+                    "rel_path": str(f.relative_to(PROJECT_ROOT)),
                     "rows": row_count,
                     "columns_count": len(header),
                     "columns": [c.strip() for c in header],

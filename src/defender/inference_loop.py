@@ -97,7 +97,8 @@ def scale_features(X, available_cols, stats_path=None):
     means = np.array(means, dtype=np.float32)
     stds = np.array(stds, dtype=np.float32)
 
-    return (X - means) / stds
+    scaled = (X - means) / stds
+    return np.clip(scaled, -5.0, 5.0)
 
 
 def preprocess_batch(df, stats_path=None):

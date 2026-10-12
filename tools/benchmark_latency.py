@@ -22,6 +22,7 @@ OUTPUT_CSV = os.path.join(
     "..",
     "data",
     "reports",
+    "benchmarks",
     "latency_quantization_report.csv",
 )
 

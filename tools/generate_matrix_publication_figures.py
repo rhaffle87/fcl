@@ -26,85 +26,120 @@ plt.rcParams.update(
 
 
 def plot_pareto_frontier(out_path="docs/paper/figures/fig6_pareto_frontier.png"):
-    fig, ax = plt.subplots(figsize=(8, 5.5))
+    fig, ax = plt.subplots(figsize=(8.5, 6.2))
 
     # Real experimental points from Matrix Sweep
     # CNN: Accuracy 99.20%, Comm 185.8 KB, Size 46.4 KB
     # MLP: Accuracy 98.45%, Comm 79.4 KB, Size 19.8 KB
     # Transformer: Accuracy 99.55%, Comm 299.6 KB, Size 74.2 KB
 
-    models = [
+    pareto_models = [
         {
             "name": "1D-CNN (A-GEM + TrimmedMean)",
+            "short": "1D-CNN (A-GEM)",
             "acc": 99.20,
             "comm": 185.8,
             "size": 46.4,
             "color": "#2563EB",
             "marker": "o",
+            "offset": (0, 12),
+            "ha": "center",
         },
         {
             "name": "MLP (A-GEM + TrimmedMean)",
+            "short": "MLP (A-GEM)",
             "acc": 98.45,
             "comm": 79.4,
             "size": 19.8,
             "color": "#10B981",
             "marker": "s",
+            "offset": (0, 12),
+            "ha": "center",
         },
         {
-            "name": "Transformer (GEM + FedAvg)",
+            "name": "Transformer (GEM + TrimmedMean)",
+            "short": "Transformer (GEM)",
             "acc": 99.55,
             "comm": 299.6,
             "size": 74.2,
             "color": "#8B5CF6",
             "marker": "^",
+            "offset": (0, 14),
+            "ha": "center",
         },
+    ]
+
+    baseline_models = [
         {
             "name": "1D-CNN (EWC + FedAvg)",
+            "short": "1D-CNN (EWC)",
             "acc": 92.48,
             "comm": 185.8,
             "size": 46.4,
             "color": "#3B82F6",
             "marker": "o",
+            "offset": (0, -20),
+            "ha": "center",
         },
         {
             "name": "MLP (EWC + FedAvg)",
+            "short": "MLP (EWC)",
             "acc": 92.38,
             "comm": 79.4,
             "size": 19.8,
             "color": "#34D399",
             "marker": "s",
+            "offset": (0, -20),
+            "ha": "center",
         },
         {
             "name": "Transformer (EWC + FedAvg)",
+            "short": "Transformer (EWC)",
             "acc": 93.71,
             "comm": 299.6,
             "size": 74.2,
             "color": "#A78BFA",
             "marker": "^",
+            "offset": (0, -20),
+            "ha": "center",
         },
     ]
 
-    for m in models:
-        scatter = ax.scatter(
+    # Plot Pareto champions first (Column 1 of legend)
+    for m in pareto_models:
+        marker_area = 42.0 + m["size"] * 0.75
+        ax.scatter(
             m["comm"],
             m["acc"],
-            s=m["size"] * 12,
+            s=marker_area,
+            marker=m["marker"],
             color=m["color"],
-            alpha=0.85,
-            edgecolors="black",
+            alpha=0.90,
+            edgecolors="#1e293b",
             linewidth=1.2,
             label=f"{m['name']} ({m['size']} KB INT8)",
+            zorder=4,
         )
         ax.annotate(
-            m["name"].split(" (")[0],
+            m["short"],
             (m["comm"], m["acc"]),
             textcoords="offset points",
-            xytext=(10, -5 if m["acc"] > 99 else 8),
-            fontsize=9,
+            xytext=m["offset"],
+            ha=m["ha"],
+            fontsize=8.5,
             fontweight="bold" if m["acc"] > 98 else "normal",
+            color="#0f172a",
+            bbox=dict(
+                boxstyle="round,pad=0.25",
+                facecolor="white",
+                edgecolor="#94a3b8",
+                alpha=0.92,
+                linewidth=0.8,
+            ),
+            zorder=5,
         )
 
-    # Pareto boundary curve
+    # Pareto boundary curve (4th item in Column 1 of legend)
     pareto_x = [79.4, 185.8, 299.6]
     pareto_y = [98.45, 99.20, 99.55]
     ax.plot(
@@ -112,25 +147,74 @@ def plot_pareto_frontier(out_path="docs/paper/figures/fig6_pareto_frontier.png")
         pareto_y,
         linestyle="--",
         color="#DC2626",
-        linewidth=2.0,
+        linewidth=2.2,
         label="Empirical Pareto Frontier",
+        zorder=3,
     )
-    ax.fill_between(pareto_x, pareto_y, 90, color="#FEE2E2", alpha=0.35)
+    ax.fill_between(pareto_x, pareto_y, 89.0, color="#FEE2E2", alpha=0.30, zorder=2)
+
+    # Plot Baseline models (Column 2 of legend)
+    for m in baseline_models:
+        marker_area = 42.0 + m["size"] * 0.75
+        ax.scatter(
+            m["comm"],
+            m["acc"],
+            s=marker_area,
+            marker=m["marker"],
+            color=m["color"],
+            alpha=0.90,
+            edgecolors="#1e293b",
+            linewidth=1.2,
+            label=f"{m['name']} ({m['size']} KB INT8)",
+            zorder=4,
+        )
+        ax.annotate(
+            m["short"],
+            (m["comm"], m["acc"]),
+            textcoords="offset points",
+            xytext=m["offset"],
+            ha=m["ha"],
+            fontsize=8.5,
+            fontweight="bold" if m["acc"] > 98 else "normal",
+            color="#0f172a",
+            bbox=dict(
+                boxstyle="round,pad=0.25",
+                facecolor="white",
+                edgecolor="#94a3b8",
+                alpha=0.92,
+                linewidth=0.8,
+            ),
+            zorder=5,
+        )
 
     ax.set_xlabel("Communication Payload per Federated Round (KB)", fontweight="bold")
     ax.set_ylabel("Threat Classification Accuracy (%)", fontweight="bold")
     ax.set_title(
         "Pareto Frontier: Accuracy vs Communication Overhead vs Model Size",
         fontweight="bold",
-        pad=12,
+        pad=14,
     )
-    ax.set_ylim(90, 100.5)
-    ax.set_xlim(50, 340)
-    ax.grid(True, linestyle=":", alpha=0.6)
-    ax.legend(loc="lower right", framealpha=0.92, fontsize=8.5)
+    ax.set_ylim(89.0, 102.5)
+    ax.set_xlim(50, 335)
+    ax.grid(True, linestyle=":", alpha=0.6, zorder=1)
+    
+    # Clean legend strictly below the chart with ample vertical and horizontal margin
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.21),
+        ncol=2,
+        framealpha=0.95,
+        fontsize=8.2,
+        markerscale=0.65,
+        borderpad=1.0,
+        labelspacing=0.65,
+        handletextpad=0.9,
+        columnspacing=1.8,
+        edgecolor="#94a3b8",
+    )
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    plt.savefig(out_path)
+    plt.savefig(out_path, bbox_inches="tight", dpi=300)
     plt.close()
     print(f"[SUCCESS] Saved Pareto Frontier figure to {out_path}")
 
@@ -147,10 +231,6 @@ def plot_subsystem_radar(out_path="docs/paper/figures/fig7_subsystem_radar.png")
     N = len(categories)
 
     # 0 to 1 normalized ratings across dimensions
-    # 1D-CNN: Acc (0.99), BWT (0.98), Byzantine (0.95), DP (0.98), Param Eff (0.85), FPS (0.95)
-    # Transformer: Acc (1.00), BWT (0.95), Byzantine (0.90), DP (0.97), Param Eff (0.50), FPS (0.60)
-    # MLP: Acc (0.90), BWT (0.92), Byzantine (0.92), DP (0.95), Param Eff (1.00), FPS (1.00)
-
     values_cnn = [0.99, 0.98, 0.95, 0.98, 0.85, 0.95]
     values_trans = [1.00, 0.95, 0.90, 0.97, 0.50, 0.60]
     values_mlp = [0.90, 0.92, 0.92, 0.95, 1.00, 1.00]
@@ -162,9 +242,9 @@ def plot_subsystem_radar(out_path="docs/paper/figures/fig7_subsystem_radar.png")
     values_trans += values_trans[:1]
     values_mlp += values_mlp[:1]
 
-    fig, ax = plt.subplots(figsize=(7.5, 7.5), subplot_kw=dict(polar=True))
+    fig, ax = plt.subplots(figsize=(7.2, 7.2), subplot_kw=dict(polar=True))
 
-    plt.xticks(angles[:-1], categories, color="#1F2937", size=10, fontweight="bold")
+    plt.xticks(angles[:-1], categories, color="#1F2937", size=9.5, fontweight="bold")
     ax.set_rlabel_position(25)
     plt.yticks(
         [0.2, 0.4, 0.6, 0.8, 1.0],
@@ -210,15 +290,21 @@ def plot_subsystem_radar(out_path="docs/paper/figures/fig7_subsystem_radar.png")
     ax.set_title(
         "Subsystem Multi-Dimensional Evaluation Radar",
         fontweight="bold",
-        size=13,
-        pad=25,
+        size=12.5,
+        pad=22,
     )
+    # Legend cleanly placed below the radar chart
     plt.legend(
-        loc="upper right", bbox_to_anchor=(1.3, 1.15), framealpha=0.95, fontsize=9.5
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.15),
+        ncol=1,
+        framealpha=0.95,
+        fontsize=9.0,
+        edgecolor="#d1d5db"
     )
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    plt.savefig(out_path)
+    plt.savefig(out_path, bbox_inches="tight")
     plt.close()
     print(f"[SUCCESS] Saved Radar figure to {out_path}")
 

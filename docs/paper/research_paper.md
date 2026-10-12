@@ -570,6 +570,18 @@ echo "tmpfs /mnt/ramdisk tmpfs size=4G 0 0" | sudo tee -a /etc/fstab
 
 Flow records are written to `/mnt/ramdisk/flows/` at capture speed, then directly loaded into PyTorch tensors in-memory for training. Batched CSV files decouple capture throughput from disk I/O constraints and preserve the RAID controller's queue for VM operations.
 
+### 5.4 Empirical Dataset Profile and Class Invariants
+
+The live telemetry dataset captured across the dual Proxmox defender nodes totals **$N = 11{,}823$ physical flows** serialized across 396 CSV files ($5{,}922$ on Defender A and $5{,}901$ on Defender B). The empirical 5-class distribution strictly matches production enterprise characteristics:
+
+* **Class 0 (Normal Background)**: $10{,}942$ flows ($92.55\%$) — Benign HTTP/HTTPS, SSH management, and routine DNS queries.
+* **Class 2 (DNS Exfiltration)**: $591$ flows ($5.00\%$) — High-entropy base64-encoded TXT records tunneling sensitive data.
+* **Class 3 (SSH BruteForce)**: $149$ flows ($1.26\%$) — Rapid credential guessing bursts on port 22 with short inter-arrival times.
+* **Class 1 (Botnet C2 Beaconing)**: $74$ flows ($0.63\%$, $37$ flows per node) — Highly sparse periodic beaconing on non-standard ports (8080, 8888, 9000).
+* **Class 4 (Slowloris DoS)**: $67$ flows ($0.57\%$) — Low-rate connection starvation flows with extended durations ($>2{,}000\,\text{ms}$) on web ports.
+
+Using an 80/20 stratified train/validation split across both edge nodes yields **$9{,}458$ training flows** and **$2{,}365$ holdout validation flows**.
+
 This completes the data pipeline. The output-scaled, encoded feature vectors stored on the RAM disk is the direct input to the Flower/Avalanche software engine described in Chapter 6.
 
 ---
@@ -1173,11 +1185,11 @@ See also the convergence visualization in [`figures/fig1_convergence_curves.png`
 flowchart TB
     subgraph Imbalance ["1. Traffic Class Imbalance per Batch (NFStream Window)"]
         direction LR
-        S_Norm["Normal Traffic: 2,000 flows (94.8%)"]
-        S_DoS["DoS: 100 flows (4.7%)"]
-        S_SSH["SSH Brute: 50 flows (2.4%)"]
-        S_Exfil["DNS Exfil: 30 flows (1.4%)"]
-        S_Bot["Botnet C2: ~12 flows (0.57% Sparse)"]
+        S_Norm["Normal Traffic: 10,942 flows (92.55%)"]
+        S_Exfil["DNS Exfil: 591 flows (5.00%)"]
+        S_SSH["SSH Brute: 149 flows (1.26%)"]
+        S_Bot["Botnet C2: 74 flows (0.63% Sparse)"]
+        S_DoS["DoS: 67 flows (0.57%)"]
     end
 
     subgraph Fisher ["2. Resulting Fisher Information Matrix Diagonal (F_i)"]
@@ -1330,7 +1342,7 @@ flowchart TB
 
 Edge IDS gateways must classify network flows at multi-gigabit line rates. We benchmarked three neural backbones across PyTorch FP32, INT8 Dynamic Quantization, and ONNX Runtime CPU execution providers on the physical Proxmox testbed.
 
-#### Table 9.3: Multi-Runtime Hardware Inference Throughput & Latency
+#### Table 9.3: Multi-Runtime Hardware Inference Throughput & Latency (Bare-Metal Dell PowerEdge R630 Testbed)
 
 | Model Backbone | Batch Size | PyTorch FP32 Latency | ONNX Runtime Latency | PyTorch Throughput | ONNX Runtime Throughput | ONNX Speedup |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |

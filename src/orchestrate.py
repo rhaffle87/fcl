@@ -313,6 +313,8 @@ class RemoteNode:
             "-o",
             "StrictHostKeyChecking=no",
             "-o",
+            "BatchMode=yes",
+            "-o",
             "ConnectTimeout=5",
             "-o",
             "ServerAliveInterval=10",
@@ -1278,22 +1280,23 @@ def main():
         if active_run_id:
             _log.info(f"[orchestrator] Active MLflow run ID: {active_run_id}")
             local_script_path = "log_dataset_temp.py"
+            script_code = f"""import mlflow, json
+mlflow.set_tracking_uri('http://localhost:5000')
+client = mlflow.tracking.MlflowClient()
+client.log_param('{active_run_id}', 'dataset_hash', '{dataset_hash}')
+client.log_param('{active_run_id}', 'defender_a_hash', '{hash_a}')
+client.log_param('{active_run_id}', 'defender_b_hash', '{hash_b}')
+metadata = {{
+    "defender_a_dataset_hash": "{hash_a}",
+    "defender_b_dataset_hash": "{hash_b}",
+    "combined_dataset_hash": "{dataset_hash}"
+}}
+with open('/tmp/dataset_lineage.json', 'w') as f:
+    json.dump(metadata, f, indent=4)
+client.log_artifact('{active_run_id}', '/tmp/dataset_lineage.json')
+"""
             with open(local_script_path, "w") as sf:
-                sf.write(f"""import mlflow, json
-                    mlflow.set_tracking_uri('http://localhost:5000')
-                    client = mlflow.tracking.MlflowClient()
-                    client.log_param('{active_run_id}', 'dataset_hash', '{dataset_hash}')
-                    client.log_param('{active_run_id}', 'defender_a_hash', '{hash_a}')
-                    client.log_param('{active_run_id}', 'defender_b_hash', '{hash_b}')
-                    metadata = {{
-                        "defender_a_dataset_hash": "{hash_a}",
-                        "defender_b_dataset_hash": "{hash_b}",
-                        "combined_dataset_hash": "{dataset_hash}"
-                    }}
-                    with open('/tmp/dataset_lineage.json', 'w') as f:
-                        json.dump(metadata, f, indent=4)
-                    client.log_artifact('{active_run_id}', '/tmp/dataset_lineage.json')
-                    """)
+                sf.write(script_code)
             aggregator.scp_file(local_script_path, "~/log_dataset.py")
             aggregator.run_cmd("/opt/flower-env/bin/python3 ~/log_dataset.py")
             try:
