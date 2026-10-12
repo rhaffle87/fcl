@@ -1,0 +1,2 @@
+file,line,marker,severity,snippet,description
+.agents/rules/ponytail.md,28,ponytail:,MEDIUM,"- Mark intentional simplifications with a `ponytail:` comment. If the shortcut has a known ceiling (global lock, O(n²) s","ponytail:` comment. If the shortcut has a known ceiling (global lock, O(n²) scan, naive heuristic), "

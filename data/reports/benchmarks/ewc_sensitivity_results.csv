@@ -1,0 +1,8 @@
+ewc_lambda,accuracy,bwt_degradation,cpi_score,stability_status
+0.1,0.9976,-0.0446,0.9849,Under-regularized
+0.5,0.9964,-0.0312,0.9881,Under-regularized
+0.8,0.9956,-0.0255,0.9893,Optimal
+1.0,0.9952,-0.0227,0.9898,Optimal
+2.0,0.9936,-0.0147,0.9911,Optimal
+5.0,0.9908,-0.0071,0.9914,Over-regularized
+10.0,0.9884,-0.0038,0.9907,Over-regularized

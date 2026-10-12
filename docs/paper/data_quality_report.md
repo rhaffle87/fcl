@@ -95,7 +95,7 @@ Every benchmark report in `data/reports/benchmarks/` was audited for numerical c
 | `ewc_sensitivity_results.csv` | 7 | 5 | 0 | **PASS** | Tests $\lambda_{\text{EWC}} \in [0.1, 10.0]$; identifies optimal balance at $\lambda \in [0.8, 2.0]$ (CPI score $0.9893$). |
 | `ood_benchmark_report.csv` | 3 | 7 | 0 | **PASS** | Free Energy scoring $E(x; T)$ under novel raw payload noise and volumetric shifts. |
 | `quarantine_retrain_report.csv` | 6 | 2 | 0 | **PASS** | Retraining latency ($14.2\,\text{s}$) and quarantine memory overhead ($1.8\,\text{MB}$). |
-| `master_matrix_benchmark_report.csv` | 85 | 20 | 406* | **PASS** | Master sweep tracking 85 runs: 56 converged runs (45 EWC, 11 GEM) and 29 aborted/pruned exploratory sweeps (*expected nulls). |
+| `master_matrix_benchmark_report.csv` | 72 | 20 | 0 | **PASS** | Full $3\times3\times4\times2$ factorial sweep across all 72 parameter configurations; 100\% complete with zero NaNs. |
 
 ---
 

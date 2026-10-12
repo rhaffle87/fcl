@@ -66,6 +66,7 @@ data/*
 !data/models/
 data/models/*
 !data/models/MODEL_CARD.md
+!data/reports/benchmarks/*.csv
 
 # Secrets, private keys & environment variables
 *.key

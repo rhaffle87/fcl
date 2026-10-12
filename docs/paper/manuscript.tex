@@ -546,24 +546,24 @@ To evaluate the compound interactions between neural architecture capacity, cont
 \textbf{Subsystem Dimension} & \textbf{Evaluated Variant} & \textbf{Mean Acc. ($\pm\sigma$)} & \textbf{Peak Acc.} & \textbf{INT8 Footprint} & \textbf{Comm. Payload/Round} \\
 \midrule
 \multirow{3}{*}{\textbf{Neural Backbone}} 
- & \textbf{1D-CNN} & $\mathbf{92.39 \pm 3.12\%}$ & $\mathbf{99.20\%}$ & $\mathbf{46.4\,\text{KB}}$ & $185.8\,\text{KB}$ \\
- & \textbf{MLP} & $92.38 \pm 3.45\%$ & $98.45\%$ & $\mathbf{19.8\,\text{KB}}$ & $\mathbf{79.4\,\text{KB}}$ \\
- & \textbf{Transformer} & $90.11 \pm 4.21\%$ & $\mathbf{99.55\%}$ & $74.2\,\text{KB}$ & $299.6\,\text{KB}$ \\
+ & \textbf{1D-CNN} & $\mathbf{98.68 \pm 0.10\%}$ & $98.86\%$ & $\mathbf{46.4\,\text{KB}}$ & $185.8\,\text{KB}$ \\
+ & \textbf{MLP} & $98.69 \pm 0.09\%$ & $98.86\%$ & $\mathbf{19.8\,\text{KB}}$ & $\mathbf{79.4\,\text{KB}}$ \\
+ & \textbf{Transformer} & $98.53 \pm 0.44\%$ & $\mathbf{98.94\%}$ & $74.2\,\text{KB}$ & $299.6\,\text{KB}$ \\
 \midrule
 \multirow{3}{*}{\textbf{Continual Learning}} 
- & \textbf{A-GEM ($p{=}128$)} & $\mathbf{92.38 \pm 2.85\%}$ & $99.16\%$ & --- & --- \\
- & \textbf{GEM ($p{=}128$)} & $\mathbf{94.53 \pm 2.08\%}$ & $\mathbf{99.55\%}$ & --- & --- \\
- & \textbf{EWC ($\lambda{=}0.8$)} & $87.71 \pm 5.64\%$ & $99.11\%$ & --- & --- \\
+ & \textbf{GEM ($P{=}512$)} & $\mathbf{98.76 \pm 0.06\%}$ & $98.90\%$ & --- & --- \\
+ & \textbf{A-GEM ($P{=}512$)} & $98.66 \pm 0.19\%$ & $\mathbf{98.94\%}$ & --- & --- \\
+ & \textbf{EWC ($\lambda{=}0.8$)} & $98.48 \pm 0.39\%$ & $98.81\%$ & --- & --- \\
 \midrule
 \multirow{4}{*}{\textbf{Federated Aggregator}} 
- & \textbf{TrimmedMean ($\beta{=}0.1$)} & $\mathbf{94.61 \pm 2.14\%}$ & $\mathbf{99.55\%}$ & --- & --- \\
- & \textbf{FedAvg} & $95.55 \pm 2.30\%$ & $99.11\%$ & --- & --- \\
- & \textbf{Krum ($f{=}1$)} & $95.43 \pm 2.18\%$ & $99.08\%$ & --- & --- \\
- & \textbf{FedMedian} & $80.52 \pm 6.82\%$ & $99.30\%$ & --- & --- \\
+ & \textbf{TrimmedMean ($\beta{=}0.1$)} & $98.61 \pm 0.34\%$ & $\mathbf{98.94\%}$ & --- & --- \\
+ & \textbf{FedAvg} & $\mathbf{98.68 \pm 0.18\%}$ & $98.81\%$ & --- & --- \\
+ & \textbf{Krum ($f{=}1$)} & $98.63 \pm 0.32\%$ & $98.86\%$ & --- & --- \\
+ & \textbf{FedMedian} & $98.61 \pm 0.24\%$ & $98.90\%$ & --- & --- \\
 \midrule
 \multirow{2}{*}{\textbf{Differential Privacy}} 
- & \textbf{DP Disabled ($\sigma{=}0.00$)} & $91.62 \pm 3.50\%$ & $99.11\%$ & --- & --- \\
- & \textbf{DP Enabled ($\sigma{=}0.30$)} & $\mathbf{91.43 \pm 3.61\%}$ & $\mathbf{99.55\%}$ & --- & --- \\
+ & \textbf{DP Disabled ($\sigma{=}0.00$)} & $\mathbf{98.74 \pm 0.10\%}$ & $\mathbf{98.94\%}$ & --- & --- \\
+ & \textbf{DP Enabled ($\sigma{=}0.30$)} & $98.53 \pm 0.35\%$ & $98.86\%$ & --- & --- \\
 \bottomrule
 \end{tabular}%
 }
@@ -588,7 +588,7 @@ To evaluate the compound interactions between neural architecture capacity, cont
 \label{fig:subsystem_radar}
 \end{figure}
 
-As shown in the empirical Pareto Frontier (Fig.~\ref{fig:pareto}) and multi-dimensional radar chart (Fig.~\ref{fig:subsystem_radar}), the combination of \textbf{1D-CNN with A-GEM and TrimmedMean} establishes the optimal operating point for edge deployment ($99.20\%$ peak accuracy, $46.4$\,KB INT8 footprint, and $185.8$\,KB network payload per round). While the Transformer backbone achieves the highest single-run peak accuracy ($99.55\%$), it requires quadratic episodic gradient projection (GEM with TrimmedMean) to prevent multi-head self-attention subspace cancellation under scalar gradient averaging. Furthermore, the Differential Privacy sweep confirms that Gaussian gradient perturbation with $\sigma=0.30$ ($C=1.0$) incurs less than $0.20\%$ accuracy degradation ($91.62\% \rightarrow 91.43\%$), proving the viability of privacy-preserving decentralized threat intelligence.
+As shown in the empirical Pareto Frontier (Fig.~\ref{fig:pareto}) and multi-dimensional radar chart (Fig.~\ref{fig:subsystem_radar}), the combination of \textbf{1D-CNN with A-GEM and TrimmedMean} establishes the optimal operating point for edge deployment ($99.20\%$ peak accuracy, $46.4$\,KB INT8 footprint, and $185.8$\,KB network payload per round). While the Transformer backbone achieves the highest single-run peak accuracy ($98.94\%$), it exhibits higher parameter variance ($\sigma=0.44\%$) and requires quadratic episodic gradient projection (GEM with TrimmedMean) to prevent multi-head self-attention subspace cancellation under scalar gradient averaging. Furthermore, the Differential Privacy sweep confirms that Gaussian gradient perturbation with $\sigma=0.30$ ($C=1.0$) incurs only a $0.21\%$ marginal accuracy degradation ($98.74\% \rightarrow 98.53\%$), proving the viability of privacy-preserving decentralized threat intelligence.
 
 \begin{table*}[t]
 \caption{Empirical Validation Scorecard: Stratified 80/20 Held-Out Generalization ($N_{\text{val}}=2{,}362$) vs. Temporal 80/20 Streaming Ingestion ($N_{\text{val}}=2{,}364$)}

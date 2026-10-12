@@ -1,0 +1,7 @@
+Metric,Value
+Architecture,cnn
+Historical_Acc_Pre,0.2450
+Historical_Acc_Post,0.0150
+Backward_Transfer_BWT,-0.2300
+Zero_Day_Adaptation_Acc,1.0000
+Training_Duration_Sec,0.30

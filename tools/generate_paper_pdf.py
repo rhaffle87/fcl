@@ -17,9 +17,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PAPER_DIR = PROJECT_ROOT / "docs" / "paper"
 
 
+def print_flush(*args, **kwargs):
+    print(*args, **kwargs, flush=True)
+
+
 def get_ssh_opts():
-    key_path = Path.home() / ".ssh" / "id_ed25519"
-    opts = [
+    return [
+        "-n",
         "-o",
         "BatchMode=yes",
         "-o",
@@ -27,16 +31,29 @@ def get_ssh_opts():
         "-o",
         "ConnectTimeout=10",
     ]
-    if key_path.exists():
-        opts += ["-i", str(key_path)]
-    return opts
+
+
+def get_scp_opts():
+    return [
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=10",
+    ]
 
 
 def run_ssh(cmd, host):
     opts = get_ssh_opts()
     res = subprocess.run(
-        ["ssh"] + opts + [f"root@{host}", cmd], capture_output=True, text=True
+        ["ssh"] + opts + [f"root@{host}", cmd],
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
     )
+    if res.returncode != 0 and "not-found" not in res.stdout and "|| true" not in cmd:
+        print_flush(f"  [SSH NOTE/WARN {res.returncode}] {res.stderr.strip()}")
     return res.returncode, res.stdout, res.stderr
 
 
@@ -56,63 +73,68 @@ def main():
     )
     args = parser.parse_args()
 
-    print("========================================================================")
-    print("      FL-CL Publication Manuscript LaTeX PDF Compilation Suite")
-    print("========================================================================")
+    print_flush("========================================================================")
+    print_flush("      FL-CL Publication Manuscript LaTeX PDF Compilation Suite")
+    print_flush("========================================================================")
 
     # 1. Ensure remote build directory exists
-    print(f"[*] Setting up build workspace on aggregator ({args.aggregator})...")
+    print_flush(f"[*] Setting up build workspace on aggregator ({args.aggregator})...")
     run_ssh(
         "rm -rf /tmp/paper_build && mkdir -p /tmp/paper_build/figures", args.aggregator
     )
 
     # 2. Package and upload LaTeX sources and vector figures via scp
-    print("[*] Uploading LaTeX sources and vector figures...")
-    temp_tar = Path(tempfile.gettempdir()) / "flcl_paper_build.tar.gz"
+    print_flush("[*] Uploading LaTeX sources and vector figures...")
+    temp_tar = PAPER_DIR / "flcl_paper_build.tar.gz"
     with tarfile.open(temp_tar, mode="w:gz") as tar:
         tar.add(PAPER_DIR / "manuscript.tex", arcname="manuscript.tex")
         tar.add(PAPER_DIR / "references.bib", arcname="references.bib")
         for fig in (PAPER_DIR / "figures").glob("*.*"):
             tar.add(fig, arcname=f"figures/{fig.name}")
 
-    scp_opts = get_ssh_opts()
+    scp_opts = get_scp_opts()
+    print_flush(f"[*] Executing scp {temp_tar.name} to {args.aggregator}...")
     subprocess.run(
         ["scp"]
         + scp_opts
         + [str(temp_tar), f"root@{args.aggregator}:/tmp/paper_build.tar.gz"],
         check=True,
+        stdin=subprocess.DEVNULL,
     )
+    if temp_tar.exists():
+        temp_tar.unlink()
+    print_flush("[*] Extracting remote tar package...")
     run_ssh("tar -xzf /tmp/paper_build.tar.gz -C /tmp/paper_build", args.aggregator)
 
     # 3. Check and install IEEEtran.cls if missing
-    print("[*] Checking IEEEtran document class...")
+    print_flush("[*] Checking IEEEtran document class...")
     rc, out, err = run_ssh(
         "kpsewhich IEEEtran.cls || echo 'not-found'", args.aggregator
     )
     if "not-found" in out or rc != 0:
-        print("  [*] Installing texlive-publishers for IEEEtran...")
+        print_flush("  [*] Installing texlive-publishers for IEEEtran...")
         run_ssh(
             "DEBIAN_FRONTEND=noninteractive apt-get install -y texlive-publishers",
             args.aggregator,
         )
 
     # 4. Compile with pdflatex + bibtex + pdflatex (Pass 2) + pdflatex (Pass 3)
-    print("[*] Compiling LaTeX manuscript (Pass 1)...")
+    print_flush("[*] Compiling LaTeX manuscript (Pass 1)...")
     run_ssh(
         "cd /tmp/paper_build && pdflatex -interaction=nonstopmode manuscript.tex",
         args.aggregator,
     )
 
-    print("[*] Running BibTeX...")
+    print_flush("[*] Running BibTeX...")
     run_ssh("cd /tmp/paper_build && bibtex manuscript || true", args.aggregator)
 
-    print("[*] Compiling LaTeX manuscript (Pass 2 - Read Citations)...")
+    print_flush("[*] Compiling LaTeX manuscript (Pass 2 - Read Citations)...")
     run_ssh(
         "cd /tmp/paper_build && pdflatex -interaction=nonstopmode manuscript.tex",
         args.aggregator,
     )
 
-    print("[*] Compiling LaTeX manuscript (Pass 3 - Final Cross References)...")
+    print_flush("[*] Compiling LaTeX manuscript (Pass 3 - Final Cross References)...")
     run_ssh(
         "cd /tmp/paper_build && pdflatex -interaction=nonstopmode manuscript.tex",
         args.aggregator,
@@ -120,18 +142,19 @@ def main():
 
     # 5. Fetch PDF back to local workspace via scp
     out_pdf = Path(args.output)
-    print(f"[*] Fetching compiled PDF to {out_pdf}...")
+    print_flush(f"[*] Fetching compiled PDF to {out_pdf}...")
     res = subprocess.run(
         ["scp"]
         + scp_opts
-        + [f"root@{args.aggregator}:/tmp/paper_build/manuscript.pdf", str(out_pdf)]
+        + [f"root@{args.aggregator}:/tmp/paper_build/manuscript.pdf", str(out_pdf)],
+        stdin=subprocess.DEVNULL,
     )
 
     if res.returncode == 0 and out_pdf.exists() and out_pdf.stat().st_size > 10000:
-        print(
+        print_flush(
             f"\n[SUCCESS] Compiled PDF generated: {out_pdf} ({out_pdf.stat().st_size:,} bytes)"
         )
-        print(
+        print_flush(
             "========================================================================\n"
         )
         sys.exit(0)
@@ -141,10 +164,10 @@ def main():
         "cat /tmp/paper_build/manuscript.log 2>/dev/null | tail -n 50 || true",
         args.aggregator,
     )
-    print(
+    print_flush(
         f"\n[FAIL] PDF compilation failed on aggregator. LaTeX error log:\n{log_content}"
     )
-    print("========================================================================\n")
+    print_flush("========================================================================\n")
     sys.exit(1)
 
 

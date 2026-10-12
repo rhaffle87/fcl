@@ -1,0 +1,7 @@
+Test,Metric,Value
+Byzantine 40% Sybil (FedAvg),Accuracy,0.19200000166893005
+Byzantine 40% Sybil (TrimmedMean),Accuracy,0.20200000703334808
+Byzantine 40% Sybil (FedMedian),Accuracy,0.21199999749660492
+Byzantine 40% Sybil (Krum),Accuracy,0.18000000715255737
+DLG Gradient Inversion (Non-DP),Reconstruction_MSE,0.8329560160636902
+DLG Gradient Inversion (DP-SGD σ=0.30),Reconstruction_MSE,3.1221208572387695

@@ -1,0 +1,25 @@
+Track,CL_Strategy,Class,BWT_Delta,Metric_Notes
+Track_A_ColdStart_100R,EWC,Normal,-0.000015,Negligible drift
+Track_A_ColdStart_100R,EWC,Botnet,-0.854400,Catastrophic forgetting (Fisher diagonal collapse)
+Track_A_ColdStart_100R,EWC,Exfiltration,0.000000,Zero forgetting
+Track_A_ColdStart_100R,EWC,BruteForce,-0.014200,Stable representation
+Track_A_ColdStart_100R,EWC,DoS,-0.009100,Stable representation
+Track_A_ColdStart_100R,EWC,Average,-0.175543,Mean BWT across 5 classes
+Track_B_Dropout_50Pct,EWC,Normal,-0.001300,Stable
+Track_B_Dropout_50Pct,EWC,Botnet,-0.775100,Catastrophic forgetting under stochastic participation
+Track_B_Dropout_50Pct,EWC,Exfiltration,0.000000,Zero forgetting
+Track_B_Dropout_50Pct,EWC,BruteForce,-0.009200,Stable
+Track_B_Dropout_50Pct,EWC,DoS,-0.023900,Stable
+Track_B_Dropout_50Pct,EWC,Average,-0.161900,Mean BWT across 5 classes
+Track_C_Initial_GEM,GEM,Normal,-0.002600,Stable
+Track_C_Initial_GEM,GEM,Botnet,-0.312200,Controlled memory loss (100% recall recovered)
+Track_C_Initial_GEM,GEM,Exfiltration,-0.001000,Near-perfect retention
+Track_C_Initial_GEM,GEM,BruteForce,0.000000,Zero degradation
+Track_C_Initial_GEM,GEM,DoS,-0.009000,Highly stable
+Track_C_Initial_GEM,GEM,Average,-0.064960,Mean BWT across 5 classes
+Track_D_Tuned_GEM,GEM,Normal,-0.000311,Highly stable
+Track_D_Tuned_GEM,GEM,Botnet,-0.148000,Mitigated BWT regression (F1 0.6905)
+Track_D_Tuned_GEM,GEM,Exfiltration,-0.000007,Near-perfect retention
+Track_D_Tuned_GEM,GEM,BruteForce,0.000000,Zero degradation
+Track_D_Tuned_GEM,GEM,DoS,-0.009418,Highly stable
+Track_D_Tuned_GEM,GEM,Average,-0.031547,Mean BWT across 5 classes
