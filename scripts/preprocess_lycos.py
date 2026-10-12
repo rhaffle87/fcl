@@ -9,22 +9,24 @@ Author: Rafli Alif
 Date: 2026-10-02
 """
 
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.model_selection import train_test_split
 import warnings
-warnings.filterwarnings('ignore')
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+warnings.filterwarnings("ignore")
 
 # Paths
 DATA_DIR = Path("E:/Projects/fl-cl/data/raw/LYCOS-IDS2017")
 OUTPUT_DIR = Path("E:/Projects/fl-cl/data/processed")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-print("="*80)
+print("=" * 80)
 print("LYCOS-IDS2017 Preprocessing for FL-CL-IDS Thesis")
-print("="*80)
+print("=" * 80)
 
 # Step 1: Load CSV files
 print("\n[1/8] Loading CSV files from LYCOS-IDS2017...")
@@ -41,7 +43,7 @@ dfs = []
 for csv_file in csv_files:
     print(f"  Loading {csv_file.name}...")
     try:
-        df = pd.read_csv(csv_file, encoding='utf-8', low_memory=False)
+        df = pd.read_csv(csv_file, encoding="utf-8", low_memory=False)
         dfs.append(df)
     except Exception as e:
         print(f"  ERROR loading {csv_file.name}: {e}")
@@ -56,15 +58,13 @@ print("\n[2/8] Filtering 3 classes (BENIGN, SSH-Patator, DoS)...")
 print(f"Original label distribution:\n{df['Label'].value_counts()}\n")
 
 # Keep only relevant classes
-target_labels = ['BENIGN', 'SSH-Patator', 'DoS Slowloris', 'DoS Hulk', 'DoS GoldenEye']
-df_filtered = df[df['Label'].isin(target_labels)].copy()
+target_labels = ["BENIGN", "SSH-Patator", "DoS Slowloris", "DoS Hulk", "DoS GoldenEye"]
+df_filtered = df[df["Label"].isin(target_labels)].copy()
 
 # Merge DoS variants into single 'DoS' class
-df_filtered['Label'] = df_filtered['Label'].replace({
-    'DoS Slowloris': 'DoS',
-    'DoS Hulk': 'DoS',
-    'DoS GoldenEye': 'DoS'
-})
+df_filtered["Label"] = df_filtered["Label"].replace(
+    {"DoS Slowloris": "DoS", "DoS Hulk": "DoS", "DoS GoldenEye": "DoS"}
+)
 
 print(f"After filtering: {len(df_filtered):,} rows")
 print(f"Class distribution:\n{df_filtered['Label'].value_counts()}\n")
@@ -86,12 +86,22 @@ print(f"Rows after NaN removal: {len(df_filtered):,}")
 # Step 4: Feature selection
 print("\n[4/8] Feature selection...")
 # Exclude non-numeric and identifier columns
-exclude_cols = ['Label', 'Timestamp', 'Flow ID', 'Source IP', 'Destination IP', 
-                'Source Port', 'Destination Port', 'Protocol']
+exclude_cols = [
+    "Label",
+    "Timestamp",
+    "Flow ID",
+    "Source IP",
+    "Destination IP",
+    "Source Port",
+    "Destination Port",
+    "Protocol",
+]
 feature_cols = [col for col in df_filtered.columns if col not in exclude_cols]
 
 # Keep only numeric columns
-numeric_cols = df_filtered[feature_cols].select_dtypes(include=[np.number]).columns.tolist()
+numeric_cols = (
+    df_filtered[feature_cols].select_dtypes(include=[np.number]).columns.tolist()
+)
 print(f"Numeric features: {len(numeric_cols)}")
 
 # Remove features with zero variance (constant values)
@@ -108,15 +118,17 @@ if zero_var_cols:
 # Step 5: Encode labels
 print("\n[5/8] Encoding labels...")
 label_encoder = LabelEncoder()
-df_filtered['Label_Encoded'] = label_encoder.fit_transform(df_filtered['Label'])
+df_filtered["Label_Encoded"] = label_encoder.fit_transform(df_filtered["Label"])
 
-label_mapping = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
+label_mapping = dict(
+    zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_))
+)
 print(f"Label mapping: {label_mapping}")
 
 # Step 6: Normalize features
 print("\n[6/8] Normalizing features (StandardScaler)...")
 X = df_filtered[numeric_cols].values
-y = df_filtered['Label_Encoded'].values
+y = df_filtered["Label_Encoded"].values
 
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
@@ -148,50 +160,51 @@ print("\n[8/8] Saving preprocessed data...")
 
 # Save as CSV (with feature names)
 train_df = pd.DataFrame(X_train, columns=numeric_cols)
-train_df['Label'] = y_train
+train_df["Label"] = y_train
 train_df.to_csv(OUTPUT_DIR / "train_3class.csv", index=False)
 
 val_df = pd.DataFrame(X_val, columns=numeric_cols)
-val_df['Label'] = y_val
+val_df["Label"] = y_val
 val_df.to_csv(OUTPUT_DIR / "val_3class.csv", index=False)
 
 test_df = pd.DataFrame(X_test, columns=numeric_cols)
-test_df['Label'] = y_test
+test_df["Label"] = y_test
 test_df.to_csv(OUTPUT_DIR / "test_3class.csv", index=False)
 
 # Save metadata
 metadata = {
-    'dataset': 'LYCOS-IDS2017',
-    'classes': label_mapping,
-    'num_features': len(numeric_cols),
-    'feature_names': numeric_cols,
-    'scaler_mean': scaler.mean_.tolist(),
-    'scaler_std': scaler.scale_.tolist(),
-    'train_samples': len(X_train),
-    'val_samples': len(X_val),
-    'test_samples': len(X_test),
-    'preprocessing_date': '2026-10-02'
+    "dataset": "LYCOS-IDS2017",
+    "classes": label_mapping,
+    "num_features": len(numeric_cols),
+    "feature_names": numeric_cols,
+    "scaler_mean": scaler.mean_.tolist(),
+    "scaler_std": scaler.scale_.tolist(),
+    "train_samples": len(X_train),
+    "val_samples": len(X_val),
+    "test_samples": len(X_test),
+    "preprocessing_date": "2026-10-02",
 }
 
 import json
-with open(OUTPUT_DIR / "metadata.json", 'w') as f:
+
+with open(OUTPUT_DIR / "metadata.json", "w") as f:
     json.dump(metadata, f, indent=2)
 
 print(f"\nSaved to: {OUTPUT_DIR}")
 print(f"  - train_3class.csv: {len(train_df):,} rows")
 print(f"  - val_3class.csv:   {len(val_df):,} rows")
 print(f"  - test_3class.csv:  {len(test_df):,} rows")
-print(f"  - metadata.json")
+print("  - metadata.json")
 
 # Summary statistics
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("PREPROCESSING COMPLETE")
-print("="*80)
+print("=" * 80)
 print(f"Original dataset: {len(df):,} rows")
 print(f"After filtering: {len(df_filtered):,} rows")
 print(f"Final (train+val+test): {len(X_train) + len(X_val) + len(X_test):,} rows")
 print(f"Features: {len(numeric_cols)}")
-print(f"Classes: 3 (Normal=0, DoS=1, SSH-Patator=2)")
+print("Classes: 3 (Normal=0, DoS=1, SSH-Patator=2)")
 print("\nImbalance ratio (train set):")
 for label_name, label_id in sorted(label_mapping.items(), key=lambda x: x[1]):
     count = (y_train == label_id).sum()
@@ -199,4 +212,4 @@ for label_name, label_id in sorted(label_mapping.items(), key=lambda x: x[1]):
     print(f"  {label_name}: {ratio:.1f}x")
 
 print("\nReady for PyTorch training!")
-print("="*80)
+print("=" * 80)

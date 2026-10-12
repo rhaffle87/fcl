@@ -10,7 +10,6 @@ import argparse
 import subprocess
 import sys
 import tarfile
-import tempfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -73,9 +72,13 @@ def main():
     )
     args = parser.parse_args()
 
-    print_flush("========================================================================")
+    print_flush(
+        "========================================================================"
+    )
     print_flush("      FL-CL Publication Manuscript LaTeX PDF Compilation Suite")
-    print_flush("========================================================================")
+    print_flush(
+        "========================================================================"
+    )
 
     # 1. Ensure remote build directory exists
     print_flush(f"[*] Setting up build workspace on aggregator ({args.aggregator})...")
@@ -167,7 +170,9 @@ def main():
     print_flush(
         f"\n[FAIL] PDF compilation failed on aggregator. LaTeX error log:\n{log_content}"
     )
-    print_flush("========================================================================\n")
+    print_flush(
+        "========================================================================\n"
+    )
     sys.exit(1)
 
 

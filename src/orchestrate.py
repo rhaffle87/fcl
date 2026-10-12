@@ -1032,7 +1032,9 @@ def main():
         else:
             node.cleanup(kill_mlflow=True)
             if node.name in ["defender-a", "defender-b"]:
-                _log.info(f"[{node.name}] Verifying edge inference service and cleaning up ramdisk flows directory...")
+                _log.info(
+                    f"[{node.name}] Verifying edge inference service and cleaning up ramdisk flows directory..."
+                )
                 node.run_cmd(
                     "if systemctl list-unit-files fl-cl-edge-inference.service >/dev/null 2>&1; then "
                     "systemctl stop fl-cl-edge-inference.service 2>/dev/null || true; "

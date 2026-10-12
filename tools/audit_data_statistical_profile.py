@@ -5,15 +5,14 @@
 # per-class statistics, and contamination metrics (mutual info, train/test leakage,
 # target leakage, duplicate flows).
 
+import argparse
 import json
-import os
 import sys
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
 
 repo_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(repo_root / "src" / "defender"))
@@ -62,10 +61,14 @@ def run_audit():
 
     X_all = np.concatenate([X_a, X_b], axis=0)
     y_all = np.concatenate([y_a, y_b], axis=0)
-    node_id = np.concatenate([np.zeros(len(y_a), dtype=int), np.ones(len(y_b), dtype=int)])
+    node_id = np.concatenate(
+        [np.zeros(len(y_a), dtype=int), np.ones(len(y_b), dtype=int)]
+    )
 
     N_total = len(X_all)
-    print(f"\n[+] Total Flows Loaded: {N_total} (Defender A: {len(X_a)}, Defender B: {len(X_b)})")
+    print(
+        f"\n[+] Total Flows Loaded: {N_total} (Defender A: {len(X_a)}, Defender B: {len(X_b)})"
+    )
     print(f"[+] Feature Dimension: {X_all.shape[1]}")
 
     # 2. Class Distribution Verification
@@ -93,26 +96,44 @@ def run_audit():
         n_inf = int(np.isinf(col).sum())
         zeros_pct = float((col == 0.0).mean() * 100)
 
-        rows.append({
-            "idx": i,
-            "name": name,
-            "mean": mean_val,
-            "std": std_val,
-            "min": min_val,
-            "p25": p25_val,
-            "median": med_val,
-            "p75": p75_val,
-            "max": max_val,
-            "nan_count": n_nan,
-            "inf_count": n_inf,
-            "zeros_pct": zeros_pct,
-        })
+        rows.append(
+            {
+                "idx": i,
+                "name": name,
+                "mean": mean_val,
+                "std": std_val,
+                "min": min_val,
+                "p25": p25_val,
+                "median": med_val,
+                "p75": p75_val,
+                "max": max_val,
+                "nan_count": n_nan,
+                "inf_count": n_inf,
+                "zeros_pct": zeros_pct,
+            }
+        )
 
     df_profile = pd.DataFrame(rows)
-    print(df_profile[["idx", "name", "mean", "std", "min", "median", "max", "nan_count", "inf_count"]].to_string(index=False))
+    print(
+        df_profile[
+            [
+                "idx",
+                "name",
+                "mean",
+                "std",
+                "min",
+                "median",
+                "max",
+                "nan_count",
+                "inf_count",
+            ]
+        ].to_string(index=False)
+    )
 
     # 4. Per-Class Feature Means & Standard Deviations
-    print("\n--- 3. PER-CLASS STATISTICAL MEANS & STANDARD DEVIATIONS (10 EXTRACTED FEATURES) ---")
+    print(
+        "\n--- 3. PER-CLASS STATISTICAL MEANS & STANDARD DEVIATIONS (10 EXTRACTED FEATURES) ---"
+    )
     class_profiles = {}
     for c in range(5):
         c_mask = y_all == c
@@ -149,25 +170,33 @@ def run_audit():
     # Check 1: NaN or Inf occurrences
     total_nans = int(np.isnan(X_all).sum())
     total_infs = int(np.isinf(X_all).sum())
-    print(f"  [CHECK 1] NaN / Inf Values: Total NaNs = {total_nans}, Total Infs = {total_infs} -> {'PASS' if total_nans == 0 and total_infs == 0 else 'FAIL'}")
+    print(
+        f"  [CHECK 1] NaN / Inf Values: Total NaNs = {total_nans}, Total Infs = {total_infs} -> {'PASS' if total_nans == 0 and total_infs == 0 else 'FAIL'}"
+    )
 
     # Check 2: Out of bounds clipping
     out_of_bounds = int(((X_all < -5.0) | (X_all > 5.0)).sum())
-    print(f"  [CHECK 2] Scaled Feature Boundary Violation (outside [-5.0, 5.0]): {out_of_bounds} -> {'PASS' if out_of_bounds == 0 else 'FAIL'}")
+    print(
+        f"  [CHECK 2] Scaled Feature Boundary Violation (outside [-5.0, 5.0]): {out_of_bounds} -> {'PASS' if out_of_bounds == 0 else 'FAIL'}"
+    )
 
     # Check 3: Zero-variance in non-padded dimensions
     zero_var_feats = []
     for i in range(10):
         if np.std(X_all[:, i]) < 1e-6:
             zero_var_feats.append(FEATURE_NAMES_10[i])
-    print(f"  [CHECK 3] Zero-Variance in Extracted Features: {len(zero_var_feats)} features -> {'PASS' if len(zero_var_feats) == 0 else 'FAIL'}")
+    print(
+        f"  [CHECK 3] Zero-Variance in Extracted Features: {len(zero_var_feats)} features -> {'PASS' if len(zero_var_feats) == 0 else 'FAIL'}"
+    )
 
     # Check 4: Node Cross-Contamination / Duplicate vectors
     # Check whether exact identical feature vectors exist across nodes
     unique_a = set(map(tuple, np.round(X_a[:, :10], 4)))
     unique_b = set(map(tuple, np.round(X_b[:, :10], 4)))
     shared_vectors = len(unique_a.intersection(unique_b))
-    print(f"  [CHECK 4] Distinct Node Topology Overlap: Defender A unique={len(unique_a)}, Defender B unique={len(unique_b)}, Intersecting={shared_vectors} (Benign standard web flows)")
+    print(
+        f"  [CHECK 4] Distinct Node Topology Overlap: Defender A unique={len(unique_a)}, Defender B unique={len(unique_b)}, Intersecting={shared_vectors} (Benign standard web flows)"
+    )
 
     # Check 5: Temporal Leakage Audit in 80/20 train/validation split
     split_idx_a = int(np.ceil(0.8 * len(X_a)))
@@ -177,9 +206,13 @@ def run_audit():
     train_y_b = y_b[:split_idx_b]
     val_y_b = y_b[split_idx_b:]
 
-    print(f"  [CHECK 5] Temporal Partition Leakage Audit:")
-    print(f"    Defender A: Train N={len(train_y_a)} {dict(Counter(train_y_a))}, Val N={len(val_y_a)} {dict(Counter(val_y_a))}")
-    print(f"    Defender B: Train N={len(train_y_b)} {dict(Counter(train_y_b))}, Val N={len(val_y_b)} {dict(Counter(val_y_b))}")
+    print("  [CHECK 5] Temporal Partition Leakage Audit:")
+    print(
+        f"    Defender A: Train N={len(train_y_a)} {dict(Counter(train_y_a))}, Val N={len(val_y_a)} {dict(Counter(val_y_a))}"
+    )
+    print(
+        f"    Defender B: Train N={len(train_y_b)} {dict(Counter(train_y_b))}, Val N={len(val_y_b)} {dict(Counter(val_y_b))}"
+    )
     # Verify temporal monotonicity (no future flows leaked into past)
     print("    Strict chronological ordering preserved -> PASS (Zero future lookahead)")
 
@@ -188,7 +221,9 @@ def run_audit():
         "total_flows": N_total,
         "nodes": {"defender_a": len(X_a), "defender_b": len(X_b)},
         "class_distribution": {CLASS_NAMES[c]: int(class_counts[c]) for c in range(5)},
-        "class_percentages": {CLASS_NAMES[c]: float((class_counts[c] / N_total) * 100) for c in range(5)},
+        "class_percentages": {
+            CLASS_NAMES[c]: float((class_counts[c] / N_total) * 100) for c in range(5)
+        },
         "overall_feature_profile": rows,
         "per_class_profiles": class_profiles,
         "contamination_checks": {
@@ -196,7 +231,7 @@ def run_audit():
             "bounds_clipping_pass": out_of_bounds == 0,
             "zero_variance_pass": len(zero_var_feats) == 0,
             "temporal_split_monotonic": True,
-        }
+        },
     }
 
     out_json_path = repo_root / "data" / "reports" / "data_statistical_profile.json"
@@ -209,4 +244,8 @@ def run_audit():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Audit dataset statistical profiles and contamination metrics."
+    )
+    parser.parse_args()
     run_audit()

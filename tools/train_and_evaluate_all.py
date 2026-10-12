@@ -7,18 +7,23 @@
 #   2) Temporal 80/20 train/test split (measuring chronological production streaming performance)
 # Logs epoch loss, convergence, confusion matrices, and per-class Precision/Recall/F1.
 
+import argparse
 import json
-import os
 import sys
 import time
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from torch.optim import Adam
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -32,14 +37,26 @@ from model import get_model
 LABEL_NAMES = {0: "Normal", 1: "Botnet", 2: "Exfiltration", 3: "BruteForce", 4: "DoS"}
 
 
-def train_single_model(model_type, X_train, y_train, X_val, y_val, epochs=40, lr=0.005, batch_size=64, seed=42):
+def train_single_model(
+    model_type,
+    X_train,
+    y_train,
+    X_val,
+    y_val,
+    epochs=40,
+    lr=0.005,
+    batch_size=64,
+    seed=42,
+):
     torch.manual_seed(seed)
     np.random.seed(seed)
 
     input_dim = X_train.shape[1]
     num_classes = 5
 
-    model = get_model(model_type=model_type, input_dim=input_dim, num_classes=num_classes)
+    model = get_model(
+        model_type=model_type, input_dim=input_dim, num_classes=num_classes
+    )
     optimizer = Adam(model.parameters(), lr=lr, weight_decay=1e-4)
 
     # Compute class weights for cross-entropy to handle extreme imbalance
@@ -138,7 +155,9 @@ def run_full_retraining():
     X_all = torch.cat([X_a, X_b], dim=0)
     y_all = torch.cat([y_a, y_b], dim=0)
     N_total = len(X_all)
-    print(f"[+] Loaded {N_total} total flows across dual defenders. Dimensions: {X_all.shape}")
+    print(
+        f"[+] Loaded {N_total} total flows across dual defenders. Dimensions: {X_all.shape}"
+    )
 
     models = ["cnn", "mlp", "transformer"]
     results = {"stratified": {}, "temporal": {}}
@@ -165,16 +184,26 @@ def run_full_retraining():
     X_train_s, y_train_s = X_all[train_idx], y_all[train_idx]
     X_val_s, y_val_s = X_all[val_idx], y_all[val_idx]
 
-    print(f"[*] Stratified Split: Train N={len(X_train_s)} {dict(Counter(y_train_s.numpy()))}")
-    print(f"[*] Stratified Split: Val   N={len(X_val_s)} {dict(Counter(y_val_s.numpy()))}")
+    print(
+        f"[*] Stratified Split: Train N={len(X_train_s)} {dict(Counter(y_train_s.numpy()))}"
+    )
+    print(
+        f"[*] Stratified Split: Val   N={len(X_val_s)} {dict(Counter(y_val_s.numpy()))}"
+    )
 
     for m in models:
         print(f"\n--- Retraining {m.upper()} on Stratified Split ---")
-        res = train_single_model(m, X_train_s, y_train_s, X_val_s, y_val_s, epochs=40, lr=0.005)
+        res = train_single_model(
+            m, X_train_s, y_train_s, X_val_s, y_val_s, epochs=40, lr=0.005
+        )
         results["stratified"][m] = res
-        print(f"  [+] {m.upper()} Accuracy: {res['accuracy'] * 100:.2f}% | Macro F1: {res['macro_f1'] * 100:.2f}%")
+        print(
+            f"  [+] {m.upper()} Accuracy: {res['accuracy'] * 100:.2f}% | Macro F1: {res['macro_f1'] * 100:.2f}%"
+        )
         for cname, p in res["per_class"].items():
-            print(f"      {cname:12s} -> Prec: {p['precision'] * 100:6.2f}%, Recall: {p['recall'] * 100:6.2f}%, F1: {p['f1'] * 100:6.2f}% (N={p['support']})")
+            print(
+                f"      {cname:12s} -> Prec: {p['precision'] * 100:6.2f}%, Recall: {p['recall'] * 100:6.2f}%, F1: {p['f1'] * 100:6.2f}% (N={p['support']})"
+            )
 
     # =========================================================================
     # PART 2: TEMPORAL 80/20 EVALUATION (Chronological Streaming Split)
@@ -191,14 +220,22 @@ def run_full_retraining():
     X_val_t = torch.cat([X_a[sp_a:], X_b[sp_b:]], dim=0)
     y_val_t = torch.cat([y_a[sp_a:], y_b[sp_b:]], dim=0)
 
-    print(f"[*] Temporal Split: Train N={len(X_train_t)} {dict(Counter(y_train_t.numpy()))}")
-    print(f"[*] Temporal Split: Val   N={len(X_val_t)} {dict(Counter(y_val_t.numpy()))}")
+    print(
+        f"[*] Temporal Split: Train N={len(X_train_t)} {dict(Counter(y_train_t.numpy()))}"
+    )
+    print(
+        f"[*] Temporal Split: Val   N={len(X_val_t)} {dict(Counter(y_val_t.numpy()))}"
+    )
 
     for m in models:
         print(f"\n--- Retraining {m.upper()} on Temporal Split ---")
-        res = train_single_model(m, X_train_t, y_train_t, X_val_t, y_val_t, epochs=40, lr=0.005)
+        res = train_single_model(
+            m, X_train_t, y_train_t, X_val_t, y_val_t, epochs=40, lr=0.005
+        )
         results["temporal"][m] = res
-        print(f"  [+] {m.upper()} Accuracy: {res['accuracy'] * 100:.2f}% | Normal Recall: {res['per_class']['Normal']['recall'] * 100:.2f}%")
+        print(
+            f"  [+] {m.upper()} Accuracy: {res['accuracy'] * 100:.2f}% | Normal Recall: {res['per_class']['Normal']['recall'] * 100:.2f}%"
+        )
 
     # Save retraining results to disk
     out_file = repo_root / "data" / "reports" / "retraining_verification_results.json"
@@ -210,4 +247,8 @@ def run_full_retraining():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Comprehensive retraining and empirical verification suite for FL-CL."
+    )
+    parser.parse_args()
     run_full_retraining()

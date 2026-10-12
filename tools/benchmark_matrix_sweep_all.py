@@ -12,7 +12,6 @@
 
 import argparse
 import copy
-import os
 import sys
 import time
 import uuid
@@ -31,8 +30,8 @@ sys.path.insert(0, str(REPO_ROOT / "src" / "defender"))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import client
-from model import get_model
 from cl_strategy import StandaloneAGEM
+from model import get_model
 
 REPORTS_DIR = REPO_ROOT / "data" / "reports" / "benchmarks"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -133,7 +132,9 @@ def project_gem(model, current_grad, memory_x, memory_y, margin=0.2):
     loss_mem = nn.functional.cross_entropy(out_mem, memory_y)
     loss_mem.backward()
 
-    g_ref_list = [p.grad.data.view(-1) for p in model.parameters() if p.grad is not None]
+    g_ref_list = [
+        p.grad.data.view(-1) for p in model.parameters() if p.grad is not None
+    ]
     if not g_ref_list:
         return
     g_ref = torch.cat(g_ref_list)
@@ -246,7 +247,10 @@ def run_federated_configuration(
     all_train_y = torch.cat([cd[1] for cd in client_data])
     counts = Counter(all_train_y.numpy())
     total_samples = len(all_train_y)
-    weights = [total_samples / (num_classes * max(counts.get(c, 1), 1)) for c in range(num_classes)]
+    weights = [
+        total_samples / (num_classes * max(counts.get(c, 1), 1))
+        for c in range(num_classes)
+    ]
     class_weights = torch.tensor(weights, dtype=torch.float32)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
 
@@ -254,7 +258,10 @@ def run_federated_configuration(
     ewc_params = {}
     ewc_fisher = {}
     memory_buffers = [None for _ in range(len(client_data))]
-    agem_engines = [StandaloneAGEM(patterns_per_exp=128, sample_size=32) for _ in range(len(client_data))]
+    agem_engines = [
+        StandaloneAGEM(patterns_per_exp=128, sample_size=32)
+        for _ in range(len(client_data))
+    ]
 
     # Setup episodic memories for GEM / AGEM
     for c_id, (cx, cy) in enumerate(client_data):
@@ -279,7 +286,9 @@ def run_federated_configuration(
         for c_id, (cx, cy) in enumerate(client_data):
             client_model = copy.deepcopy(global_model)
             client_model.train()
-            optimizer = torch.optim.Adam(client_model.parameters(), lr=0.003, weight_decay=1e-4)
+            optimizer = torch.optim.Adam(
+                client_model.parameters(), lr=0.003, weight_decay=1e-4
+            )
 
             dataset = TensorDataset(cx, cy)
             loader = DataLoader(dataset, batch_size=32, shuffle=True)
@@ -297,14 +306,21 @@ def run_federated_configuration(
                             ewc_loss += (
                                 0.8
                                 * 0.5
-                                * (ewc_fisher[c_id][name] * (param - ewc_params[c_id][name]).pow(2)).sum()
+                                * (
+                                    ewc_fisher[c_id][name]
+                                    * (param - ewc_params[c_id][name]).pow(2)
+                                ).sum()
                             )
                     loss += ewc_loss
 
                 loss.backward()
 
                 # Extract proposed gradient
-                g_list = [p.grad.data.view(-1).clone() for p in client_model.parameters() if p.grad is not None]
+                g_list = [
+                    p.grad.data.view(-1).clone()
+                    for p in client_model.parameters()
+                    if p.grad is not None
+                ]
                 if g_list:
                     current_grad = torch.cat(g_list)
 
@@ -319,26 +335,36 @@ def run_federated_configuration(
 
                 # 4. Differential Privacy Gradient Perturbation
                 if dp_enabled:
-                    torch.nn.utils.clip_grad_norm_(client_model.parameters(), max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(
+                        client_model.parameters(), max_norm=1.0
+                    )
                     noise_std = (0.30 * 1.0) / 32.0
                     for p in client_model.parameters():
                         if p.grad is not None:
                             noise = torch.randn_like(p.grad.data) * noise_std
                             p.grad.data.add_(noise)
                 else:
-                    torch.nn.utils.clip_grad_norm_(client_model.parameters(), max_norm=1.0)
+                    torch.nn.utils.clip_grad_norm_(
+                        client_model.parameters(), max_norm=1.0
+                    )
 
                 optimizer.step()
 
             # Store EWC state after round
             if cl_strategy == "EWC":
-                ewc_params[c_id] = {k: v.clone() for k, v in client_model.state_dict().items()}
-                ewc_fisher[c_id] = compute_fisher_diagonal(client_model, loader, criterion)
+                ewc_params[c_id] = {
+                    k: v.clone() for k, v in client_model.state_dict().items()
+                }
+                ewc_fisher[c_id] = compute_fisher_diagonal(
+                    client_model, loader, criterion
+                )
 
             local_weights.append(client_model.state_dict())
 
         # Aggregate parameters
-        new_global_weights = aggregate(local_weights, strategy=aggregation_strategy, beta=0.10)
+        new_global_weights = aggregate(
+            local_weights, strategy=aggregation_strategy, beta=0.10
+        )
         global_model.load_state_dict(new_global_weights)
 
     # Final Validation Evaluation
@@ -404,8 +430,12 @@ def run_federated_configuration(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Master Holistic 72-Run Factorial Matrix Benchmark")
-    parser.add_argument("--rounds", type=int, default=3, help="Federated rounds per trial (default: 3)")
+    parser = argparse.ArgumentParser(
+        description="Master Holistic 72-Run Factorial Matrix Benchmark"
+    )
+    parser.add_argument(
+        "--rounds", type=int, default=3, help="Federated rounds per trial (default: 3)"
+    )
     args = parser.parse_args()
 
     print("=" * 75)
@@ -424,7 +454,9 @@ def main():
     dp_settings = [False, True]
 
     total_runs = len(models) * len(cl_strategies) * len(aggregators) * len(dp_settings)
-    print(f"[*] Factorial Matrix Grid: 3 Backbones x 3 CL x 4 Aggregators x 2 DP = {total_runs} combinations.")
+    print(
+        f"[*] Factorial Matrix Grid: 3 Backbones x 3 CL x 4 Aggregators x 2 DP = {total_runs} combinations."
+    )
 
     results = []
     run_idx = 1
@@ -435,7 +467,11 @@ def main():
             for agg in aggregators:
                 for dp in dp_settings:
                     t_start = time.time()
-                    print(f"[{run_idx:02d}/{total_runs}] Running {m.upper():11s} | CL: {cl:4s} | Agg: {agg:11s} | DP: {str(dp):5s} ...", end="", flush=True)
+                    print(
+                        f"[{run_idx:02d}/{total_runs}] Running {m.upper():11s} | CL: {cl:4s} | Agg: {agg:11s} | DP: {str(dp):5s} ...",
+                        end="",
+                        flush=True,
+                    )
                     res = run_federated_configuration(
                         model_type=m,
                         cl_strategy=cl,
@@ -449,12 +485,16 @@ def main():
                     )
                     t_elapsed = time.time() - t_start
                     results.append(res)
-                    print(f" Acc: {res['accuracy']*100:5.2f}% | Macro F1: {res['f1_class_0']:4.2f} (took {t_elapsed:.2f}s)")
+                    print(
+                        f" Acc: {res['accuracy']*100:5.2f}% | Macro F1: {res['f1_class_0']:4.2f} (took {t_elapsed:.2f}s)"
+                    )
                     run_idx += 1
 
     total_time = time.time() - t0_global
     print("\n" + "=" * 75)
-    print(f"[SUCCESS] Completed all {total_runs} parameter trials in {total_time:.2f} seconds.")
+    print(
+        f"[SUCCESS] Completed all {total_runs} parameter trials in {total_time:.2f} seconds."
+    )
     print("=" * 75)
 
     df_results = pd.DataFrame(results)
@@ -466,7 +506,9 @@ def main():
         if n_null > 0:
             print(f"  [!] Column '{col}' has {n_null} NaNs!")
     if null_counts.sum() == 0:
-        print("  [PASS] ZERO NaNs detected across all 72 matrix entries! 100% complete.")
+        print(
+            "  [PASS] ZERO NaNs detected across all 72 matrix entries! 100% complete."
+        )
 
     out_csv = REPORTS_DIR / "master_matrix_benchmark_report.csv"
     df_results.to_csv(out_csv, index=False)
@@ -477,16 +519,32 @@ def main():
     print("EMPIRICAL FACTORIAL BREAKDOWN (Marginal Means & Standard Deviations)")
     print("=" * 75)
     print("\n--- By Neural Backbone ---")
-    print(df_results.groupby("model_type")["accuracy"].agg(["count", "mean", "std", "min", "max"]))
+    print(
+        df_results.groupby("model_type")["accuracy"].agg(
+            ["count", "mean", "std", "min", "max"]
+        )
+    )
 
     print("\n--- By Continual Learning Strategy ---")
-    print(df_results.groupby("cl_strategy")["accuracy"].agg(["count", "mean", "std", "min", "max"]))
+    print(
+        df_results.groupby("cl_strategy")["accuracy"].agg(
+            ["count", "mean", "std", "min", "max"]
+        )
+    )
 
     print("\n--- By Federated Aggregator ---")
-    print(df_results.groupby("aggregation_strategy")["accuracy"].agg(["count", "mean", "std", "min", "max"]))
+    print(
+        df_results.groupby("aggregation_strategy")["accuracy"].agg(
+            ["count", "mean", "std", "min", "max"]
+        )
+    )
 
     print("\n--- By Differential Privacy (DP) ---")
-    print(df_results.groupby("dp_enabled")["accuracy"].agg(["count", "mean", "std", "min", "max"]))
+    print(
+        df_results.groupby("dp_enabled")["accuracy"].agg(
+            ["count", "mean", "std", "min", "max"]
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -69,13 +69,23 @@ print(df[avail_cols].to_csv(index=False))
         local_db = args.db_path or "data/db/mlflow.db"
         if os.path.exists(local_db):
             print(f"[*] Extracting directly from local database: {local_db}")
-            local_py = py_code.replace("conn = sqlite3.connect('/root/mlflow.db')", f"conn = sqlite3.connect(r'{local_db}')")
-            res = subprocess.run([sys.executable, "-c", local_py], capture_output=True, text=True, encoding="utf-8")
+            local_py = py_code.replace(
+                "conn = sqlite3.connect('/root/mlflow.db')",
+                f"conn = sqlite3.connect(r'{local_db}')",
+            )
+            res = subprocess.run(
+                [sys.executable, "-c", local_py],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
             if res.returncode == 0:
                 with open(out_csv, "w", encoding="utf-8") as f:
                     f.write(res.stdout)
                 df_check = pd.read_csv(out_csv)
-                print(f"[SUCCESS] Exported {len(df_check)} matrix run records to {out_csv}")
+                print(
+                    f"[SUCCESS] Exported {len(df_check)} matrix run records to {out_csv}"
+                )
                 return
 
     cmd = [
@@ -104,10 +114,15 @@ print(df[avail_cols].to_csv(index=False))
 
 if __name__ == "__main__":
     import sys
+
     parser = argparse.ArgumentParser(
         description="72-Combination Benchmark Matrix CSV Extractor"
     )
-    parser.add_argument("--local", action="store_true", help="Extract from local SQLite database")
-    parser.add_argument("--db-path", default=None, help="Custom path to SQLite database")
+    parser.add_argument(
+        "--local", action="store_true", help="Extract from local SQLite database"
+    )
+    parser.add_argument(
+        "--db-path", default=None, help="Custom path to SQLite database"
+    )
     args = parser.parse_args()
     main()

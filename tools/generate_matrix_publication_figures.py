@@ -35,12 +35,16 @@ def plot_pareto_frontier(out_path="docs/paper/figures/fig6_pareto_frontier.png")
     df = pd.read_csv(csv_path)
 
     # 36 configurations (averaging across DP disabled and enabled runs)
-    comb = df.groupby(["model_type", "cl_strategy", "aggregation_strategy"]).agg(
-        accuracy=("accuracy", "mean"),
-        loss=("loss", "mean"),
-        comm=("communication_bytes", lambda x: x.iloc[0] / 1024),
-        size=("quantized_bytes", lambda x: x.iloc[0] / 1024),
-    ).reset_index()
+    comb = (
+        df.groupby(["model_type", "cl_strategy", "aggregation_strategy"])
+        .agg(
+            accuracy=("accuracy", "mean"),
+            loss=("loss", "mean"),
+            comm=("communication_bytes", lambda x: x.iloc[0] / 1024),
+            size=("quantized_bytes", lambda x: x.iloc[0] / 1024),
+        )
+        .reset_index()
+    )
 
     fig, ax = plt.subplots(figsize=(8.8, 6.2))
 
@@ -226,13 +230,74 @@ def plot_pareto_frontier(out_path="docs/paper/figures/fig6_pareto_frontier.png")
     ax.grid(True, linestyle=":", alpha=0.6, zorder=1)
 
     legend_elements = [
-        Line2D([0], [0], linestyle="--", color="#DC2626", lw=2, label="Pareto Frontier (Champions)"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#2563EB", markeredgecolor="#1e293b", markersize=8, label="1D-CNN (45.4 KB INT8)"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#10B981", markeredgecolor="#1e293b", markersize=8, label="MLP (19.4 KB INT8)"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#8B5CF6", markeredgecolor="#1e293b", markersize=8, label="Transformer (72.5 KB INT8)"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#64748B", markeredgecolor="#1e293b", markersize=8, label="CL: A-GEM (Circles)"),
-        Line2D([0], [0], marker="D", color="w", markerfacecolor="#64748B", markeredgecolor="#1e293b", markersize=8, label="CL: GEM (Diamonds)"),
-        Line2D([0], [0], marker="s", color="w", markerfacecolor="#64748B", markeredgecolor="#1e293b", markersize=8, label="CL: EWC (Squares)"),
+        Line2D(
+            [0],
+            [0],
+            linestyle="--",
+            color="#DC2626",
+            lw=2,
+            label="Pareto Frontier (Champions)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#2563EB",
+            markeredgecolor="#1e293b",
+            markersize=8,
+            label="1D-CNN (45.4 KB INT8)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#10B981",
+            markeredgecolor="#1e293b",
+            markersize=8,
+            label="MLP (19.4 KB INT8)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#8B5CF6",
+            markeredgecolor="#1e293b",
+            markersize=8,
+            label="Transformer (72.5 KB INT8)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#64748B",
+            markeredgecolor="#1e293b",
+            markersize=8,
+            label="CL: A-GEM (Circles)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="D",
+            color="w",
+            markerfacecolor="#64748B",
+            markeredgecolor="#1e293b",
+            markersize=8,
+            label="CL: GEM (Diamonds)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="s",
+            color="w",
+            markerfacecolor="#64748B",
+            markeredgecolor="#1e293b",
+            markersize=8,
+            label="CL: EWC (Squares)",
+        ),
     ]
 
     ax.legend(
@@ -332,7 +397,7 @@ def plot_subsystem_radar(out_path="docs/paper/figures/fig7_subsystem_radar.png")
         ncol=1,
         framealpha=0.95,
         fontsize=9.0,
-        edgecolor="#d1d5db"
+        edgecolor="#d1d5db",
     )
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)

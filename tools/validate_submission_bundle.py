@@ -10,16 +10,13 @@
 # Usage:
 # python3 tools/validate_submission_bundle.py
 
-import json
-import os
+import argparse
 import sys
 import time
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
 import torch
-import torch.nn as nn
 
 repo_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(repo_root / "src" / "defender"))
@@ -54,9 +51,13 @@ def main():
 
     N_total = len(X_all)
     counts = Counter(y_all.numpy())
-    print(f"[+] Loaded {N_total} live flows (Defender A: {len(X_a)}, Defender B: {len(X_b)})")
+    print(
+        f"[+] Loaded {N_total} live flows (Defender A: {len(X_a)}, Defender B: {len(X_b)})"
+    )
     for c in range(5):
-        print(f"    Class {c} ({LABEL_NAMES[c]:12s}): {counts[c]:5d} flows ({counts[c]/N_total*100:5.2f}%)")
+        print(
+            f"    Class {c} ({LABEL_NAMES[c]:12s}): {counts[c]:5d} flows ({counts[c]/N_total*100:5.2f}%)"
+        )
 
     assert N_total == 11823, f"Expected 11823 flows, got {N_total}"
     assert counts[0] == 10942, f"Expected 10942 Normal flows, got {counts[0]}"
@@ -64,7 +65,9 @@ def main():
     assert counts[2] == 591, f"Expected 591 Exfil flows, got {counts[2]}"
     assert counts[3] == 149, f"Expected 149 BruteForce flows, got {counts[3]}"
     assert counts[4] == 67, f"Expected 67 DoS flows, got {counts[4]}"
-    print("[PASS] Multi-node class census exactly matches authoritative publication numbers.")
+    print(
+        "[PASS] Multi-node class census exactly matches authoritative publication numbers."
+    )
 
     # Step 2: Verify feature bounds and numerical hygiene
     print("\n--- [STAGE 2] Numerical Hygiene & Contamination Audit ---")
@@ -92,8 +95,12 @@ def main():
                 _ = model(dummy_in)
         elapsed_us = ((time.perf_counter() - t0) / iters) * 1e6
         n_params = sum(p.numel() for p in model.parameters())
-        print(f"    [{mtype.upper():11s}] Parameters: {n_params:6,d} | Single-Flow Latency: {elapsed_us:6.2f} us")
-        assert elapsed_us < 5000.0, f"Inference latency exceeded edge threshold: {elapsed_us:.2f} us"
+        print(
+            f"    [{mtype.upper():11s}] Parameters: {n_params:6,d} | Single-Flow Latency: {elapsed_us:6.2f} us"
+        )
+        assert (
+            elapsed_us < 5000.0
+        ), f"Inference latency exceeded edge threshold: {elapsed_us:.2f} us"
     print("[PASS] All architectures satisfy sub-millisecond edge latency bounds.")
 
     # Step 4: Verify Backward Transfer (BWT) Report Invariants
@@ -101,13 +108,18 @@ def main():
     bwt_path = repo_root / "data" / "reports" / "benchmarks" / "bwt_report.csv"
     if bwt_path.exists():
         import pandas as pd
+
         bwt_df = pd.read_csv(bwt_path)
         print(f"[+] Loaded BWT benchmark records ({len(bwt_df)} rows)")
         # Check that EWC Botnet degradation is recorded
-        ewc_botnet = bwt_df[(bwt_df["CL_Strategy"] == "EWC") & (bwt_df["Class"] == "Botnet")]
+        ewc_botnet = bwt_df[
+            (bwt_df["CL_Strategy"] == "EWC") & (bwt_df["Class"] == "Botnet")
+        ]
         if not ewc_botnet.empty:
             bwt_val = float(ewc_botnet["BWT_Delta"].iloc[0])
-            print(f"    EWC Botnet BWT Delta: {bwt_val:.4f} (Confirmed catastrophic collapse)")
+            print(
+                f"    EWC Botnet BWT Delta: {bwt_val:.4f} (Confirmed catastrophic collapse)"
+            )
             assert bwt_val < -0.80
     print("[PASS] BWT empirical metrics verified against published paper records.")
 
@@ -117,4 +129,8 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Standalone Reproducibility & Peer-Review Verification Runner for FCL."
+    )
+    parser.parse_args()
     main()

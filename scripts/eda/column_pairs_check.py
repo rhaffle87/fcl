@@ -4,8 +4,8 @@ Column Pair Verification - Requested Pairs + Rosay Pairs
 Checks value-identical and correlation for specific column pairs
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 cache_file = "E:/Projects/thesis/Datasets/interim/cic_3class_dedup.parquet"
 print(f"Loading {cache_file}...")
@@ -27,16 +27,16 @@ pairs_to_check = [
     ("Subflow Bwd Bytes", "Total Length of Bwd Packets"),
 ]
 
-print("\n" + "="*100)
+print("\n" + "=" * 100)
 print("COLUMN PAIR VERIFICATION - Value Identical + Correlation")
-print("="*100)
+print("=" * 100)
 
 results = []
 
 for col1, col2 in pairs_to_check:
     print(f"\n{'-'*100}")
     print(f"Pair: '{col1}' vs '{col2}'")
-    
+
     # Check if columns exist
     if col1 not in df.columns:
         print(f"  ❌ '{col1}' NOT FOUND")
@@ -46,15 +46,15 @@ for col1, col2 in pairs_to_check:
         print(f"  ❌ '{col2}' NOT FOUND")
         results.append((col1, col2, "NOT_FOUND_2", None, None))
         continue
-    
+
     v1 = df[col1].copy()
     v2 = df[col2].copy()
-    
+
     # Value-identical check
     identical_mask = (v1 == v2) | (pd.isna(v1) & pd.isna(v2))
     n_identical = identical_mask.sum()
     pct_identical = 100.0 * n_identical / len(df)
-    
+
     # Correlation (numeric only)
     if pd.api.types.is_numeric_dtype(v1) and pd.api.types.is_numeric_dtype(v2):
         mask_valid = np.isfinite(v1) & np.isfinite(v2)
@@ -64,11 +64,11 @@ for col1, col2 in pairs_to_check:
             corr = np.nan
     else:
         corr = np.nan
-    
+
     print(f"  Identical values: {n_identical:,} / {len(df):,} ({pct_identical:.2f}%)")
     if not np.isnan(corr):
         print(f"  Pearson correlation: {corr:.6f}")
-    
+
     # Classification
     if pct_identical == 100.0:
         status = "100% DUPLICATE"
@@ -82,15 +82,17 @@ for col1, col2 in pairs_to_check:
     else:
         status = "DISTINCT"
         print(f"  ✅ {status}")
-    
-    results.append((col1, col2, status, pct_identical, corr if not np.isnan(corr) else None))
+
+    results.append(
+        (col1, col2, status, pct_identical, corr if not np.isnan(corr) else None)
+    )
 
 # Summary table
-print("\n" + "="*100)
+print("\n" + "=" * 100)
 print("SUMMARY TABLE")
-print("="*100)
+print("=" * 100)
 print(f"\n{'Col1':<40} {'Col2':<40} {'Status':<30} {'Identical%':>10}")
-print("-"*100)
+print("-" * 100)
 for col1, col2, status, pct, corr in results:
     pct_str = f"{pct:.2f}" if pct is not None else "N/A"
     print(f"{col1:<40} {col2:<40} {status:<30} {pct_str:>10}")

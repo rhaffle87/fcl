@@ -13,7 +13,7 @@ Verifies:
 5. Real service responsiveness (Ollama HTTPS inference & MLflow tracking)
 """
 
-import json
+import argparse
 import os
 import subprocess
 import sys
@@ -87,7 +87,15 @@ def pre_register_host_key(host: str):
 def run_ssh(host: str, cmd: str, timeout: int = 20):
     pre_register_host_key(host)
     start = time.time()
-    ssh_cmd = ["ssh", "-o", "ConnectTimeout=8", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
+    ssh_cmd = [
+        "ssh",
+        "-o",
+        "ConnectTimeout=8",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=no",
+    ]
     key_path = os.getenv("SSH_KEY_PATH")
     if key_path and os.path.exists(key_path):
         ssh_cmd.extend(["-i", key_path])
@@ -135,13 +143,15 @@ def audit_node(node: dict) -> bool:
         f"if command -v arping >/dev/null 2>&1; then "
         f"ARP_OUT=$(arping -c 2 -D -I eth0 {node['local_ip']} 2>&1); ARP_CODE=$?; "
         f"else ARP_OUT='arping binary not found'; ARP_CODE=127; fi; "
-        f"echo \"$IP###$MTU###$MSS_FWD###$MSS_POST###$KEEPALIVE###$PROBING###$PERSIST###$ARP_CODE###$ARP_OUT\""
+        f'echo "$IP###$MTU###$MSS_FWD###$MSS_POST###$KEEPALIVE###$PROBING###$PERSIST###$ARP_CODE###$ARP_OUT"'
     )
 
     try:
         code, out, err, rtt = run_ssh(node["ts_ip"], batch_cmd, timeout=20)
     except Exception as ex:
-        print(f"  [FAIL] SSH Reachability: Timed out connecting to {node['ts_ip']} ({ex})")
+        print(
+            f"  [FAIL] SSH Reachability: Timed out connecting to {node['ts_ip']} ({ex})"
+        )
         return False
 
     if code != 0 or "###" not in out:
@@ -171,19 +181,27 @@ def audit_node(node: dict) -> bool:
 
     # 1. Local IP Binding
     if actual_ip == node["local_ip"]:
-        print(f"  [PASS] Local IP Binding: {actual_ip} (Matches target {node['local_ip']})")
+        print(
+            f"  [PASS] Local IP Binding: {actual_ip} (Matches target {node['local_ip']})"
+        )
     else:
         print(f"  [FAIL] Local IP Binding: '{actual_ip}' (Expected {node['local_ip']})")
         all_ok = False
 
     # 2. ARP Collision Check (Strict exit code + response check)
-    if arp_code == 0 and ("Received 0 response(s)" in arp_out or "Received 0 response" in arp_out):
+    if arp_code == 0 and (
+        "Received 0 response(s)" in arp_out or "Received 0 response" in arp_out
+    ):
         print("  [PASS] ARP Collision Check: Zero duplicate responses (Conflict-free)")
     elif arp_code == 127:
-        print(f"  [FAIL] ARP Collision Check: arping binary is missing on {node['name']}")
+        print(
+            f"  [FAIL] ARP Collision Check: arping binary is missing on {node['name']}"
+        )
         all_ok = False
     else:
-        print(f"  [FAIL] ARP Collision Check: Detected collision or arping error (Exit code {arp_code}):\n{arp_out}")
+        print(
+            f"  [FAIL] ARP Collision Check: Detected collision or arping error (Exit code {arp_code}):\n{arp_out}"
+        )
         all_ok = False
 
     # 3. MTU Check
@@ -195,23 +213,35 @@ def audit_node(node: dict) -> bool:
 
     # 4. MSS Clamping Check (Independent FORWARD and POSTROUTING inspection)
     if mss_fwd >= 1 and mss_post >= 1:
-        print(f"  [PASS] MSS Clamping: Active (FORWARD: {mss_fwd}, POSTROUTING: {mss_post})")
+        print(
+            f"  [PASS] MSS Clamping: Active (FORWARD: {mss_fwd}, POSTROUTING: {mss_post})"
+        )
     else:
-        print(f"  [FAIL] MSS Clamping: Missing required rules (FORWARD: {mss_fwd}, POSTROUTING: {mss_post}; requires >= 1 in each)")
+        print(
+            f"  [FAIL] MSS Clamping: Missing required rules (FORWARD: {mss_fwd}, POSTROUTING: {mss_post}; requires >= 1 in each)"
+        )
         all_ok = False
 
     # 5. Sysctl Tuning & Keepalive
     if keepalive == "15" and probing == "1":
-        print(f"  [PASS] TCP Keepalive & Probing:\n    net.ipv4.tcp_keepalive_time = {keepalive}\n    net.ipv4.tcp_mtu_probing = {probing}")
+        print(
+            f"  [PASS] TCP Keepalive & Probing:\n    net.ipv4.tcp_keepalive_time = {keepalive}\n    net.ipv4.tcp_mtu_probing = {probing}"
+        )
     else:
-        print(f"  [FAIL] TCP Keepalive & Probing:\n    net.ipv4.tcp_keepalive_time = {keepalive} (Expected 15)\n    net.ipv4.tcp_mtu_probing = {probing} (Expected 1)")
+        print(
+            f"  [FAIL] TCP Keepalive & Probing:\n    net.ipv4.tcp_keepalive_time = {keepalive} (Expected 15)\n    net.ipv4.tcp_mtu_probing = {probing} (Expected 1)"
+        )
         all_ok = False
 
     # 6. Persistence Unit
     if persist == "enabled":
-        print("  [PASS] Persistence Service: network-mss-clamp.service is ENABLED on boot")
+        print(
+            "  [PASS] Persistence Service: network-mss-clamp.service is ENABLED on boot"
+        )
     else:
-        print(f"  [FAIL] Persistence Service: network-mss-clamp.service status is '{persist}' (Expected enabled)")
+        print(
+            f"  [FAIL] Persistence Service: network-mss-clamp.service status is '{persist}' (Expected enabled)"
+        )
         all_ok = False
 
     # 7. Service Responsiveness
@@ -222,7 +252,9 @@ def audit_node(node: dict) -> bool:
         if code == 0 and len(out) > 0:
             print(f"  [PASS] {node['service_name']}: Operational ({s_rtt}ms)")
         else:
-            print(f"  [FAIL] {node['service_name']}: Non-zero return code {code} ({err})")
+            print(
+                f"  [FAIL] {node['service_name']}: Non-zero return code {code} ({err})"
+            )
             all_ok = False
     except Exception as ex:
         print(f"  [FAIL] {node['service_name']} check timed out: {ex}")
@@ -232,6 +264,10 @@ def audit_node(node: dict) -> bool:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="FL-CL Infrastructure network stability diagnostic and health verification suite."
+    )
+    parser.parse_args()
     print("FL-CL INFRASTRUCTURE NETWORK STABILITY AUDIT")
     results = [audit_node(node) for node in NODES]
     print("\n" + "=" * 55)

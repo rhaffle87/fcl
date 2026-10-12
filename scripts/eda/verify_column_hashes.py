@@ -5,10 +5,14 @@ Usage:
 """
 
 import hashlib
-import pandas as pd
 import pathlib
 
-def verify_dataset_columns(parquet_path: str = 'E:/Projects/thesis/Datasets/interim/cic_3class_dedup.parquet'):
+import pandas as pd
+
+
+def verify_dataset_columns(
+    parquet_path: str = "E:/Projects/thesis/Datasets/interim/cic_3class_dedup.parquet",
+):
     p = pathlib.Path(parquet_path)
     if not p.exists():
         print(f"ERROR: Dataset parquet {p} not found.")
@@ -19,7 +23,9 @@ def verify_dataset_columns(parquet_path: str = 'E:/Projects/thesis/Datasets/inte
     print(f"Total rows: {len(df):,}, Total columns: {len(df.columns)}")
 
     # Exclude non-feature metadata columns
-    feature_cols = [c for c in df.columns if c not in ['Label', 'Day', 'Label_Original']]
+    feature_cols = [
+        c for c in df.columns if c not in ["Label", "Day", "Label_Original"]
+    ]
     print(f"Candidate feature columns from raw dataset: {len(feature_cols)}")
 
     # 1. Zero-variance constant check
@@ -39,17 +45,23 @@ def verify_dataset_columns(parquet_path: str = 'E:/Projects/thesis/Datasets/inte
         h = hashlib.md5(s.tobytes()).hexdigest()
         hashes.setdefault(h, []).append(col)
 
-    identical_groups = [cols for cols in hashes.values() if len(cols) > 1 and not (set(cols).issubset(set(constant_cols)))]
-    print(f"\n--- 100% IDENTICAL FEATURE GROUPS (NON-CONSTANT: {len(identical_groups)}) ---")
+    identical_groups = [
+        cols
+        for cols in hashes.values()
+        if len(cols) > 1 and not (set(cols).issubset(set(constant_cols)))
+    ]
+    print(
+        f"\n--- 100% IDENTICAL FEATURE GROUPS (NON-CONSTANT: {len(identical_groups)}) ---"
+    )
     for grp in identical_groups:
         print(f"  Group: {grp}")
 
     # 3. Floating-point / rounding near-identical pairs (>99.99%)
     near_pairs = [
-        ('Avg Fwd Segment Size', 'Fwd Packet Length Mean'),
-        ('Avg Bwd Segment Size', 'Bwd Packet Length Mean'),
-        ('Subflow Bwd Bytes', 'Total Length of Bwd Packets'),
-        ('Average Packet Size', 'Packet Length Mean')
+        ("Avg Fwd Segment Size", "Fwd Packet Length Mean"),
+        ("Avg Bwd Segment Size", "Bwd Packet Length Mean"),
+        ("Subflow Bwd Bytes", "Total Length of Bwd Packets"),
+        ("Average Packet Size", "Packet Length Mean"),
     ]
 
     print("\n--- NEAR-IDENTICAL PAIRS CHECK ---")
@@ -60,17 +72,22 @@ def verify_dataset_columns(parquet_path: str = 'E:/Projects/thesis/Datasets/inte
             print(f"  {c1} vs {c2}: exact_match={exact_pct:.4f}%, corr={corr:.6f}")
 
     # 4. Feature calculation breakdown
-    raw_feature_count = 78 # 79 raw cols - 1 Label
-    dropped_const = len(constant_cols) # 10
-    dropped_identical = 5 # Fwd Header Length.1, Subflow Fwd Bytes, Subflow Fwd Packets, Subflow Bwd Packets, SYN Flag Count
+    raw_feature_count = 78  # 79 raw cols - 1 Label
+    dropped_const = len(constant_cols)  # 10
+    dropped_identical = 5  # Fwd Header Length.1, Subflow Fwd Bytes, Subflow Fwd Packets, Subflow Bwd Packets, SYN Flag Count
     remaining_features = raw_feature_count - dropped_const - dropped_identical
 
     print("\n--- MATHEMATICAL FEATURE COUNT SUMMARY ---")
     print(f"  Raw features (excl. Label): {raw_feature_count}")
     print(f"  Minus constant columns: -{dropped_const}")
     print(f"  Minus 100% identical duplicates: -{dropped_identical}")
-    print(f"  = REMAINING UNIQUE FEATURES: {remaining_features} (+ 1 Label = {remaining_features + 1} cols)")
-    print(f"  (If 3 near-identical columns also dropped: {remaining_features - 3} features + 1 Label)")
+    print(
+        f"  = REMAINING UNIQUE FEATURES: {remaining_features} (+ 1 Label = {remaining_features + 1} cols)"
+    )
+    print(
+        f"  (If 3 near-identical columns also dropped: {remaining_features - 3} features + 1 Label)"
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     verify_dataset_columns()

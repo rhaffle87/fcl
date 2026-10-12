@@ -234,7 +234,9 @@ def audit_facts():
             # Allow .50 and .100 ONLY in docs/07_troubleshooting.md when describing the resolved conflict
             if last_octet not in valid_octets:
                 rel_str = str(rel_path)
-                if last_octet in {50, 100} and ("07_troubleshooting" in rel_str or "walkthrough" in rel_str):
+                if last_octet in {50, 100} and (
+                    "07_troubleshooting" in rel_str or "walkthrough" in rel_str
+                ):
                     pass
                 else:
                     findings.append(
