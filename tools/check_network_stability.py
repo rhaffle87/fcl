@@ -116,7 +116,7 @@ def get_service_check_cmd(node: dict) -> str:
     if node["name"] == "ollama-server":
         ollama_key = os.getenv("OLLAMA_KEY", "")
         return (
-            f"curl -k -s -H 'x-fcl-key: {ollama_key}' https://127.0.0.1:443/api/version "
+            f"curl -k -s -H 'x-fcl-key: {ollama_key}' https://127.0.0.1:8443/api/version "
             "| grep '\"version\"'"
         )
     return node.get(
