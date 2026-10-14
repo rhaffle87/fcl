@@ -1,0 +1,20 @@
+Factor,Level,Sample_Size,Mean_Accuracy,Std_Accuracy,Mean_Macro_F1,Std_Macro_F1,Mean_Botnet_F1,Std_Botnet_F1,Mean_CPI,Eta_Squared
+Model Architecture,cnn,288,98.34,5.42,0.9052,0.0477,93.34,5.61,92.93,0.0973
+Model Architecture,mlp,288,98.72,0.14,0.9143,0.0256,93.75,0.0,93.59,0.0973
+Model Architecture,transformer,288,98.07,5.09,0.8571,0.1211,89.33,17.81,89.27,0.0973
+Continual Learning,AGEM,216,98.63,0.59,0.9058,0.0472,93.25,6.46,92.99,0.0808
+Continual Learning,EWC,216,98.25,4.14,0.8673,0.0995,91.07,14.47,90.34,0.0808
+Continual Learning,GEM,216,98.55,4.11,0.9226,0.0418,93.4,6.43,93.86,0.0808
+Continual Learning,Naive,216,98.07,6.28,0.8731,0.1002,90.84,13.54,90.52,0.0808
+Federated Aggregator,FedAvg,216,97.88,5.86,0.8627,0.1193,89.57,18.51,89.58,0.0462
+Federated Aggregator,FedMedian,216,98.68,0.26,0.9034,0.0566,92.95,6.76,92.79,0.0462
+Federated Aggregator,Krum,216,98.24,6.25,0.8971,0.0721,92.79,8.11,92.34,0.0462
+Federated Aggregator,TrimmedMean,216,98.7,0.22,0.9055,0.0468,93.24,4.3,92.99,0.0462
+Differential Privacy,Low_0.15,288,98.4,3.63,0.8949,0.0765,92.58,8.47,92.2,0.0274
+Differential Privacy,None_0.00,288,98.52,3.56,0.9069,0.0486,93.1,6.8,92.98,0.0274
+Differential Privacy,Target_0.30,288,98.2,5.44,0.8747,0.1036,90.73,15.48,90.6,0.0274
+Byzantine Threat,Clean,288,98.69,0.28,0.9011,0.066,93.06,6.32,92.71,0.0142
+Byzantine Threat,Gaussian_Noise,288,98.12,5.09,0.8789,0.1036,90.74,16.08,90.79,0.0142
+Byzantine Threat,Label_Poison_20pct,288,98.32,5.41,0.8966,0.0642,92.62,7.68,92.28,0.0142
+Edge Compression,FP32_Unpruned,432,98.41,4.44,0.894,0.0737,92.64,8.36,92.18,0.0005
+Edge Compression,Fisher_Pruned_20pct,432,98.34,4.15,0.8904,0.0868,91.64,13.03,91.68,0.0005

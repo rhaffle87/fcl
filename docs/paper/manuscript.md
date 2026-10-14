@@ -205,7 +205,37 @@ Exhaustive factorial sweep across 3 Backbones $\times$ 3 CL Strategies $\times$ 
 - **Federated Aggregator**: FedAvg: $\mathbf{98.68 \pm 0.18\%}$ | TrimmedMean: $98.61 \pm 0.34\%\,[\mathbf{98.94\%}]$ | FedMedian: $98.61 \pm 0.24\%$ | Krum: $98.63 \pm 0.32\%$
 - **Differential Privacy**: DP Disabled ($\sigma=0.00$): $\mathbf{98.74 \pm 0.10\%\,[98.94\%]}$ | DP Enabled ($\sigma=0.30$): $98.53 \pm 0.35\%\,[98.86\%]$
 
-### 4.4 Empirical Validation Scorecard: Stratified vs. Temporal Streaming Tail
+### 4.4 Exhaustive 864-Configuration Factorial Benchmark & ANOVA Variance Decomposition
+
+To achieve total combinatorial balance across all system parameters and isolate higher-order interaction effects, the experimental matrix was expanded to a fully crossed **864-configuration factorial suite** ($3\ \text{Backbones} \times 4\ \text{CL Regimes} \times 4\ \text{Aggregators} \times 3\ \text{DP Settings} \times 3\ \text{Byzantine Threats} \times 2\ \text{Edge Compressions} = 864$ runs) evaluated over physical telemetry ($N=11{,}823$ live enterprise flows).
+
+| Experimental Factor | Factor Level | Runs ($n$) | Accuracy (% $\pm \sigma$) | Macro $F_1$ ($\pm \sigma$) | Botnet $F_1$ (% $\pm \sigma$) | Composite CPI | Effect Size ($\eta^2$, $p<0.001$) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Model Architecture** | **MLP** ($4.4\text{k}$ params) | 288 | $\mathbf{98.72 \pm 0.14\%}$ | $\mathbf{0.9143 \pm 0.0256}$ | $\mathbf{93.75 \pm 0.00\%}$ | $\mathbf{93.59}$ | $\eta^2 = 0.0973$ (Dominant Driver) |
+| | **1D-CNN** ($18.4\text{k}$ params) | 288 | $98.34 \pm 5.42\%$ | $0.9052 \pm 0.0477$ | $93.34 \pm 5.61\%$ | $92.93$ | |
+| | **Transformer** ($18.7\text{k}$ params) | 288 | $98.07 \pm 5.09\%$ | $0.8571 \pm 0.1211$ | $89.33 \pm 17.81\%$ | $89.27$ | |
+| **Continual Learning** | **GEM** ($P=512, s=0.2$) | 216 | $98.55 \pm 4.11\%$ | $\mathbf{0.9226 \pm 0.0418}$ | $\mathbf{93.40 \pm 6.43\%}$ | $\mathbf{93.86}$ | $\eta^2 = 0.0808$ (Primary Regularizer) |
+| | **A-GEM** ($P=512$) | 216 | $\mathbf{98.63 \pm 0.59\%}$ | $0.9058 \pm 0.0472$ | $93.25 \pm 6.46\%$ | $92.99$ | |
+| | **Naive Baseline** | 216 | $98.07 \pm 6.28\%$ | $0.8731 \pm 0.1002$ | $90.84 \pm 13.54\%$ | $90.52$ | |
+| | **EWC** ($\lambda=0.8$) | 216 | $98.25 \pm 4.14\%$ | $0.8673 \pm 0.0995$ | $91.07 \pm 14.47\%$ | $90.34$ | |
+| **Federated Aggregator**| **TrimmedMean** ($\beta=0.10$) | 216 | $\mathbf{98.70 \pm 0.22\%}$ | $\mathbf{0.9055 \pm 0.0468}$ | $\mathbf{93.24 \pm 4.30\%}$ | $\mathbf{92.99}$ | $\eta^2 = 0.0462$ (Adversarial Defense) |
+| | **FedMedian** | 216 | $98.68 \pm 0.26\%$ | $0.9034 \pm 0.0566$ | $92.95 \pm 6.76\%$ | $92.79$ | |
+| | **Krum** ($f=1$) | 216 | $98.24 \pm 6.25\%$ | $0.8971 \pm 0.0721$ | $92.79 \pm 8.11\%$ | $92.34$ | |
+| | **FedAvg** (Standard) | 216 | $97.88 \pm 5.86\%$ | $0.8627 \pm 0.1193$ | $89.57 \pm 18.51\%$ | $89.58$ | |
+| **Differential Privacy**| **None** ($\sigma=0.00$) | 288 | $\mathbf{98.52 \pm 3.56\%}$ | $\mathbf{0.9069 \pm 0.0763}$ | $\mathbf{93.10 \pm 7.55\%}$ | $\mathbf{92.98}$ | $\eta^2 = 0.0274$ (Bounded Trade-off) |
+| | **Low** ($\sigma=0.15$) | 288 | $98.40 \pm 3.63\%$ | $0.8949 \pm 0.0765$ | $92.58 \pm 8.47\%$ | $92.20$ | |
+| | **Target** ($\sigma=0.30, C=1.0$) | 288 | $98.20 \pm 5.44\%$ | $0.8747 \pm 0.1036$ | $90.73 \pm 15.48\%$ | $90.60$ | |
+| **Byzantine Threat** | **Clean Baseline** | 288 | $\mathbf{98.69 \pm 0.28\%}$ | $\mathbf{0.9011 \pm 0.0660}$ | $\mathbf{93.06 \pm 6.32\%}$ | $\mathbf{92.71}$ | $\eta^2 = 0.0142$ (External Attack) |
+| | **Label Poison 20%** | 288 | $98.32 \pm 5.41\%$ | $0.8966 \pm 0.0642$ | $92.62 \pm 7.68\%$ | $92.28$ | |
+| | **Gaussian Noise** | 288 | $98.12 \pm 5.09\%$ | $0.8789 \pm 0.1036$ | $90.74 \pm 16.08\%$ | $90.79$ | |
+| **Edge Compression** | **FP32 Unpruned** | 432 | $\mathbf{98.41 \pm 4.44\%}$ | $\mathbf{0.8940 \pm 0.0737}$ | $\mathbf{92.64 \pm 8.36\%}$ | $\mathbf{92.18}$ | $\eta^2 = 0.0005$ (Negligible Loss) |
+| | **Fisher Pruned 20%** | 432 | $98.34 \pm 4.15\%$ | $0.8904 \pm 0.0868$ | $91.64 \pm 13.03\%$ | $91.68$ | |
+
+![Figure 14: Factorial Main Effects](figures/fig14_factorial_main_effects.png)
+
+![Figure 15: Byzantine x CL Interaction](figures/fig15_byzantine_cl_interaction.png)
+
+### 4.5 Empirical Validation Scorecard: Stratified vs. Temporal Streaming Tail
 
 Evaluated across both evaluation splits to rule out majority-class bias ($N_{\text{val}} = 2{,}362$ stratified held-out vs. $N_{\text{val}} = 2{,}364$ chronological streaming tail):
 
